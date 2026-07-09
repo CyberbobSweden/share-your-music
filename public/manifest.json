@@ -1,0 +1,11 @@
+{
+  "name": "Share Your Music — feedback för din låt",
+  "short_name": "ShareMusic",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#14120f",
+  "theme_color": "#ff4b3e",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

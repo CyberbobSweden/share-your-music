@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Share Your Music — Logga in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ff4b3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ShareMusic">
+<link rel="apple-touch-icon" href="/icon.svg">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="label"><span class="rec-dot"></span>Share Your Music</div>
+      <h1>Gå in i studion</h1>
+      <p class="section-sub">Ladda upp en låt. Få ärlig feedback.<br>Ge feedback. Tjäna lyssningar.</p>
+
+      <div class="tabs-auth">
+        <button class="tab-btn active" id="tabBtnLogin" onclick="switchAuthTab('login')">Logga in</button>
+        <button class="tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Registrera</button>
+      </div>
+
+      <div class="tab-panel active" id="tabLogin">
+        <div class="alert error" id="login-alert"></div>
+        <div class="field"><label>E-post</label><input type="email" id="login-email" autocomplete="email"></div>
+        <div class="field"><label>Lösenord</label><input type="password" id="login-password" autocomplete="current-password"></div>
+        <button class="btn full" id="login-btn">Logga in</button>
+      </div>
+
+      <div class="tab-panel" id="tabRegister">
+        <div class="alert error" id="reg-alert"></div>
+        <div class="alert success" id="reg-success"></div>
+        <div class="field"><label>Artistnamn</label><input type="text" id="reg-username" autocomplete="username" placeholder="t.ex. Midnight Static"></div>
+        <div class="field"><label>E-post</label><input type="email" id="reg-email" autocomplete="email"></div>
+        <div class="field"><label>Lösenord <span class="hint">(minst 8 tecken)</span></label><input type="password" id="reg-password" autocomplete="new-password"></div>
+        <button class="btn full" id="reg-btn">Skapa konto</button>
+        <p class="hint" style="text-align:center;margin-top:12px;">Genom att registrera dig går du med på att ge ärlig feedback. 🎧</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    redirectIfAuthed();
+
+    function switchAuthTab(tab){
+      document.getElementById('tabBtnLogin').classList.toggle('active', tab==='login');
+      document.getElementById('tabBtnRegister').classList.toggle('active', tab==='register');
+      document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+      document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+    }
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('login-btn');
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      hideAlert('login-alert');
+      if(!email || !password) return showAlert('login-alert','Ange e-post och lösenord.');
+      setLoading(btn, true);
+      const res = await apiFetch('/auth/login', { method:'POST', body: JSON.stringify({ email, password }) });
+      setLoading(btn, false);
+      if(!res) return;
+      if(!res.ok) return showAlert('login-alert', res.data?.error || 'Fel e-post eller lösenord.');
+      setAuth(res.data.token, res.data.user);
+      window.location.href = '/app.html';
+    });
+    document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-btn').click(); });
+
+    document.getElementById('reg-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('reg-btn');
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      hideAlert('reg-alert'); hideAlert('reg-success');
+      if(!username || !email || !password) return showAlert('reg-alert','Fyll i alla fält.');
+      setLoading(btn, true);
+      const res = await apiFetch('/auth/register', { method:'POST', body: JSON.stringify({ username, email, password }) });
+      setLoading(btn, false);
+      if(!res) return;
+      if(!res.ok) return showAlert('reg-alert', res.data?.error || 'Registrering misslyckades.');
+      showAlert('reg-success','Konto skapat! Loggar in...','success');
+      setAuth(res.data.token, res.data.user);
+      setTimeout(() => window.location.href = '/app.html', 700);
+    });
+  </script>
+</body>
+</html>

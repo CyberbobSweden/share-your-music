@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SESSION — feedback för din låt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg:#14120f; --panel:#1c1915; --panel-2:#221e19; --line:#332e27;
+    --text:#f2ede4; --muted:#948b7d; --accent:#ff4b3e; --gold:#d4a24c; --good:#8caa6b;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:-0.01em;}
+  .label{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+  button{font-family:inherit;}
+  .shell{max-width:920px;margin:0 auto;padding:0 20px 80px;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;padding:28px 0 18px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:14px;}
+  .brand h1{font-size:22px;margin:0;}
+  .brand .label{margin-top:2px;}
+  .rec-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:8px;animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,75,62,.5);}70%{box-shadow:0 0 0 6px rgba(255,75,62,0);}100%{box-shadow:0 0 0 0 rgba(255,75,62,0);}}
+  .user-panel{display:flex;align-items:center;gap:16px;}
+  .meter{display:flex;gap:3px;align-items:flex-end;height:18px;}
+  .meter i{display:block;width:5px;border-radius:1px;background:var(--line);}
+  .meter i.on{background:var(--gold);}
+  .meter i.on.hot{background:var(--accent);}
+  .credit-num{font-family:'Space Grotesk';font-size:20px;font-weight:700;color:var(--gold);}
+  .user-name{font-size:13px;color:var(--text);}
+  .switch-link{font-size:11px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;border:none;padding:0;}
+  .tabs{display:flex;gap:2px;margin:26px 0 22px;flex-wrap:wrap;}
+  .tab{flex:1;min-width:80px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);color:var(--muted);cursor:pointer;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;text-align:center;}
+  .tab.active{color:var(--text);border-bottom:2px solid var(--accent);background:var(--panel-2);}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+  .panel + .panel{margin-top:16px;}
+  .section-title{font-size:14px;margin:0 0 4px;}
+  .section-sub{font-size:12px;color:var(--muted);margin:0 0 18px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .chip{padding:5px 12px;border:1px solid var(--line);border-radius:20px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+  .chip.on{border-color:var(--gold);color:var(--gold);}
+  .track-row{display:flex;align-items:center;gap:14px;padding:14px 12px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;cursor:pointer;background:var(--panel-2);}
+  .track-row:hover{border-color:var(--gold);}
+  .track-idx{font-family:'Space Grotesk';font-size:13px;color:var(--muted);width:26px;}
+  .track-info{flex:1;min-width:0;}
+  .track-title{font-size:13.5px;color:var(--text);font-weight:500;}
+  .track-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .reels{display:flex;gap:3px;}
+  .reel{width:8px;height:8px;border-radius:50%;border:1px solid var(--gold);}
+  .reel.filled{background:var(--gold);}
+  .empty-state{color:var(--muted);font-size:12.5px;padding:20px 4px;}
+  .overlay{position:fixed;inset:0;background:rgba(10,9,7,.75);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:50;}
+  .overlay.open{display:flex;}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);max-width:560px;width:100%;padding:26px;position:relative;}
+  .close-x{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+  .embed-wrap{margin:16px 0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#000;}
+  .embed-note{font-size:10.5px;color:var(--muted);margin-top:6px;}
+  textarea{width:100%;min-height:120px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);font-family:'IBM Plex Mono';font-size:13px;padding:12px;border-radius:var(--radius);resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--gold);}
+  .counter-row{display:flex;justify-content:space-between;font-size:10.5px;margin-top:6px;color:var(--muted);}
+  .counter-row span.ok{color:var(--good);}
+  .btn{background:var(--accent);color:#1a0a08;border:none;padding:11px 20px;font-family:'Space Grotesk';font-weight:600;font-size:12.5px;letter-spacing:.03em;border-radius:var(--radius);cursor:pointer;text-transform:uppercase;}
+  .btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--text);}
+  .btn.full{width:100%;margin-top:14px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+  input[type=text],input[type=email],input[type=password]{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:10px 12px;font-family:'IBM Plex Mono';font-size:13px;border-radius:var(--radius);}
+  .auth-toggle{display:flex;gap:2px;margin-bottom:16px;}
+  .toggle-btn{flex:1;padding:8px;background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;font-size:11px;letter-spacing:.06em;text-transform:uppercase;}
+  .toggle-btn.active{color:var(--text);border-color:var(--gold);background:var(--panel-2);}
+  input:focus{outline:none;border-color:var(--gold);}
+  select{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:10px 12px;font-family:'IBM Plex Mono';font-size:13px;border-radius:var(--radius);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px;}
+  .banner{padding:10px 12px;border-radius:var(--radius);font-size:12px;margin-bottom:16px;border:1px solid;}
+  .banner.err{border-color:var(--accent);color:var(--accent);}
+  .banner.ok{border-color:var(--good);color:var(--good);}
+  .my-track{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;background:var(--panel-2);}
+  .my-track-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;}
+  .my-track-body{padding:0 16px 16px;display:none;border-top:1px solid var(--line);}
+  .my-track-body.open{display:block;}
+  .fb-item{padding:12px 0;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.55;}
+  .fb-item:last-child{border-bottom:none;}
+  .fb-meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:10.5px;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 6px;border-radius:20px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);white-space:nowrap;}
+  .badge i{width:6px;height:6px;border-radius:50%;display:block;}
+  .badge.ny{color:var(--muted);} .badge.ny i{background:var(--muted);}
+  .badge.palitlig{color:var(--gold);border-color:rgba(212,162,74,.4);} .badge.palitlig i{background:var(--gold);}
+  .badge.betrodd{color:var(--good);border-color:rgba(140,170,107,.4);} .badge.betrodd i{background:var(--good);}
+  .badge.expert{color:#f2ede4;border-color:var(--gold);background:linear-gradient(90deg, rgba(212,162,74,.18), rgba(255,75,62,.14));} .badge.expert i{background:linear-gradient(90deg, var(--gold), var(--accent));}
+  .badge.omtvistad{color:var(--accent);border-color:rgba(255,75,62,.4);} .badge.omtvistad i{background:var(--accent);}
+  .rep-line{display:flex;align-items:center;gap:8px;margin-top:6px;justify-content:flex-end;}
+  .rep-stat{font-size:10px;color:var(--muted);}
+  .rate-row{display:flex;gap:8px;margin-top:8px;}
+  .rate-btn{border:1px solid var(--line);background:none;color:var(--muted);padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;}
+  .rate-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .rated-label{font-size:10.5px;color:var(--muted);margin-top:8px;}
+  .reason-box{margin-top:10px;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);}
+  .reason-box textarea{min-height:60px;font-size:12px;}
+  .reason-box .row2{margin-top:8px;}
+  .rate-guidance{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+  .privacy-note{font-size:11px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line);padding:10px 12px;border-radius:var(--radius);margin-bottom:16px;line-height:1.5;}
+  .admin-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;background:var(--panel-2);flex-wrap:wrap;}
+  .admin-name{flex:1;min-width:120px;font-size:12.5px;}
+  .admin-credit-ctrl{display:flex;align-items:center;gap:6px;}
+  .mini-btn{width:24px;height:24px;border:1px solid var(--line);background:none;color:var(--text);border-radius:3px;cursor:pointer;font-size:13px;line-height:1;}
+  .mini-btn:hover{border-color:var(--gold);}
+  .ban-btn{font-size:10.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer;}
+  .ban-btn.is-banned{border-color:var(--accent);color:var(--accent);}
+  .banned-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);border:1px solid var(--accent);padding:2px 8px;border-radius:20px;}
+  .gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .gate-card{max-width:360px;width:100%;text-align:center;}
+  .gate-card h1{font-size:26px;margin-bottom:8px;}
+  .gate-card p{color:var(--muted);font-size:13px;margin-bottom:24px;}
+  .google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#f2ede4;color:#1a1815;border:none;padding:11px 20px;border-radius:3px;font-family:'Space Grotesk';font-weight:600;font-size:12.5px;cursor:pointer;margin-bottom:14px;}
+  .divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin:16px 0;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line);}
+  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .member-card{border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--panel-2);}
+  .member-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;}
+  .member-bio{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4;}
+  .country-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;background:var(--panel-2);font-size:12.5px;}
+  .country-bar-wrap{flex:1;margin:0 12px;height:5px;background:var(--line);border-radius:3px;overflow:hidden;}
+  .country-bar{height:100%;background:var(--gold);}
+  @media(max-width:560px){ .row2,.card-grid{grid-template-columns:1fr;} .user-panel{width:100%;justify-content:space-between;} }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="label"><span class="rec-dot"></span>SESSION</div>
+    <h1>Gå in i studion</h1>
+    <p>Ladda upp en låt. Få ärlig feedback.<br>Ge feedback. Tjäna lyssningar.</p>
+    <button class="google-btn" onclick="loginGoogle()">Fortsätt med Google</button>
+    <div class="divider">eller</div>
+    <div class="auth-toggle">
+      <button class="toggle-btn active" id="toggleLogin" onclick="setAuthMode('login')">Logga in</button>
+      <button class="toggle-btn" id="toggleRegister" onclick="setAuthMode('register')">Registrera</button>
+    </div>
+    <div id="gateBanner"></div>
+    <div class="field" id="nameField" style="display:none;">
+      <input type="text" id="regName" placeholder="Artistnamn" style="margin-bottom:10px;">
+    </div>
+    <input type="email" id="emailInput" placeholder="din@mejl.se" style="margin-bottom:10px;">
+    <input type="password" id="passwordInput" placeholder="Lösenord (minst 8 tecken)" style="margin-bottom:14px;">
+    <button class="btn full" id="authSubmitBtn" onclick="submitAuth()">Logga in</button>
+  </div>
+</div>
+
+<div class="shell" id="app" style="display:none;">
+  <div class="topbar">
+    <div class="brand">
+      <h1><span class="rec-dot"></span>SESSION</h1>
+      <div class="label">feedback-utbyte</div>
+    </div>
+    <div class="user-panel">
+      <div>
+        <div class="user-name" id="userNameDisplay"></div>
+        <button class="switch-link" onclick="logout()">logga ut</button>
+      </div>
+      <div>
+        <div class="meter" id="meter"></div>
+        <div class="credit-num" id="creditNum">0</div>
+        <div class="rep-line"><span class="rep-stat" id="repStat"></span><span class="badge" id="repBadge"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="listen" onclick="setTab('listen')">Lyssna</div>
+    <div class="tab" data-tab="upload" onclick="setTab('upload')">Ladda upp</div>
+    <div class="tab" data-tab="mine" onclick="setTab('mine')">Mina låtar</div>
+    <div class="tab" data-tab="community" onclick="setTab('community')">Community</div>
+    <div class="tab" data-tab="profile" onclick="setTab('profile')">Profil</div>
+    <div class="tab" data-tab="admin" id="adminTabBtn" onclick="setTab('admin')" style="display:none;">Admin</div>
+  </div>
+
+  <div id="tab-listen">
+    <div class="panel">
+      <h3 class="section-title">Lyssningskö</h3>
+      <p class="section-sub">Varje låt kräver skriven feedback — minst 100 tecken och 15 ord.</p>
+      <div class="chips" id="genreChips"></div>
+      <div id="queueList"></div>
+    </div>
+  </div>
+
+  <div id="tab-upload" style="display:none;">
+    <div class="panel">
+      <h3 class="section-title">Lägg upp en låt</h3>
+      <p class="section-sub">Klistra in en länk från Spotify eller YouTube.</p>
+      <div id="uploadBanner"></div>
+      <div class="field"><label>Låttitel</label><input type="text" id="upTitle" placeholder="t.ex. Midnight Static"></div>
+      <div class="field"><label>Länk (Spotify eller YouTube)</label><input type="text" id="upUrl" placeholder="https://open.spotify.com/track/... eller https://youtu.be/..."></div>
+      <div class="row2">
+        <div class="field"><label>Genre</label><select id="upGenre"></select></div>
+        <div class="field"><label>Antal lyssningar</label>
+          <select id="upSlots">
+            <option value="3">3 lyssningar — 3 poäng</option>
+            <option value="5">5 lyssningar — 5 poäng</option>
+            <option value="8">8 lyssningar — 8 poäng</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn full" onclick="submitTrack()">Skicka in låt</button>
+    </div>
+  </div>
+
+  <div id="tab-mine" style="display:none;">
+    <div class="panel">
+      <h3 class="section-title">Mina inskickade låtar</h3>
+      <div class="privacy-note">Feedback här skyddas av databasen (Row Level Security) — bara du (och admin) kan läsa den, oavsett vad gränssnittet visar.</div>
+      <div id="myTracksList"></div>
+    </div>
+  </div>
+
+  <div id="tab-community" style="display:none;">
+    <div class="panel">
+      <h3 class="section-title">Medlemmar</h3>
+      <p class="section-sub">Alla som gett feedback här, med sitt rykte.</p>
+      <div class="card-grid" id="communityGrid"></div>
+    </div>
+    <div class="panel">
+      <h3 class="section-title">Var i världen?</h3>
+      <p class="section-sub">Bara de som själva valt att synas på kartan visas här, per land.</p>
+      <div id="countryList"></div>
+    </div>
+  </div>
+
+  <div id="tab-profile" style="display:none;">
+    <div class="panel">
+      <h3 class="section-title">Din profil</h3>
+      <div id="profileBanner"></div>
+      <div class="field"><label>Om dig</label><textarea id="profBio" style="min-height:80px;" placeholder="Vad gör du för musik?"></textarea></div>
+      <div class="row2">
+        <div class="field"><label>Land</label><select id="profCountry"></select></div>
+        <div class="field" style="display:flex;align-items:flex-end;gap:8px;">
+          <label style="margin:0;display:flex;align-items:center;gap:8px;font-size:12px;text-transform:none;letter-spacing:0;">
+            <input type="checkbox" id="profShowMap" style="width:auto;"> Visa mig på kartan
+          </label>
+        </div>
+      </div>
+      <button class="btn full" onclick="saveProfile()">Spara</button>
+    </div>
+  </div>
+
+  <div id="tab-admin" style="display:none;">
+    <div class="panel">
+      <h3 class="section-title">Adminpanel</h3>
+      <p class="section-sub">Justera poäng, spärra eller återaktivera användare.</p>
+      <div id="adminList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <button class="close-x" onclick="closeSheet()">&times;</button>
+    <div class="label" id="sheetGenre"></div>
+    <h2 id="sheetTitle" style="margin:6px 0 2px;font-size:19px;"></h2>
+    <div class="label" id="sheetOwner"></div>
+    <div class="embed-wrap" id="sheetEmbed"></div>
+    <div class="embed-note">Fullängdsuppspelning kan kräva inloggning hos Spotify/YouTube.</div>
+    <div style="margin-top:20px;">
+      <label class="label">Din feedback (obligatorisk)</label>
+      <textarea id="fbText" placeholder="Vad funkar? Vad skulle du ändra? Var konkret..." oninput="updateCounter()"></textarea>
+      <div class="counter-row"><span id="charCount">0 / 100 tecken</span><span id="wordCount">0 / 15 ord</span></div>
+    </div>
+    <div id="sheetBanner"></div>
+    <button class="btn full" id="submitFbBtn" disabled onclick="submitFeedback()">Skicka feedback</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// KONFIGURATION — fyll i dina egna Supabase-uppgifter här.
+// Hittas i Supabase-projektet under Settings > API.
+// ============================================================
+const SUPABASE_URL = 'https://DITT-PROJEKT.supabase.co';
+const SUPABASE_ANON_KEY = 'DIN-ANON-PUBLIC-KEY';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const GENRES = ['Pop','Hip-Hop','R&B','Rock','Indie','Elektronisk','Metal','Folk','Jazz','Klassiskt','Country','Latin'];
+const COUNTRIES = [
+  ['SE','Sverige'],['NO','Norge'],['DK','Danmark'],['FI','Finland'],['IS','Island'],
+  ['DE','Tyskland'],['FR','Frankrike'],['GB','Storbritannien'],['IE','Irland'],['NL','Nederländerna'],
+  ['BE','Belgien'],['ES','Spanien'],['PT','Portugal'],['IT','Italien'],['PL','Polen'],
+  ['AT','Österrike'],['CH','Schweiz'],['GR','Grekland'],['CZ','Tjeckien'],['HU','Ungern'],
+  ['EE','Estland'],['LV','Lettland'],['LT','Litauen'],['UA','Ukraina'],['RO','Rumänien'],
+  ['US','USA'],['CA','Kanada'],['MX','Mexiko'],['BR','Brasilien'],['AR','Argentina'],
+  ['AU','Australien'],['NZ','Nya Zeeland'],['JP','Japan'],['KR','Sydkorea'],['CN','Kina'],
+  ['IN','Indien'],['ZA','Sydafrika'],['NG','Nigeria'],['KE','Kenya'],['EG','Egypten'],
+  ['AE','Förenade Arabemiraten'],['TR','Turkiet'],['RU','Ryssland']
+];
+
+let currentUser = null;   // supabase auth user
+let profile = null;       // profiles row
+let selectedGenres = new Set();
+let activeTrackId = null;
+let downvotePrompt = new Set();
+
+function flagEmoji(cc){
+  if(!cc) return '';
+  return cc.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+// ---- AUTH ----
+let authMode = 'login';
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('toggleLogin').classList.toggle('active', mode==='login');
+  document.getElementById('toggleRegister').classList.toggle('active', mode==='register');
+  document.getElementById('nameField').style.display = mode==='register' ? 'block' : 'none';
+  document.getElementById('authSubmitBtn').textContent = mode==='register' ? 'Skapa konto' : 'Logga in';
+  document.getElementById('gateBanner').innerHTML = '';
+}
+
+async function loginGoogle(){
+  await sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.href } });
+}
+
+async function submitAuth(){
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  const banner = document.getElementById('gateBanner');
+  banner.innerHTML = '';
+  if(!email || password.length < 8){
+    banner.innerHTML = '<div class="banner err">Ange e-post och ett lösenord på minst 8 tecken.</div>';
+    return;
+  }
+  if(authMode === 'register'){
+    const name = document.getElementById('regName').value.trim();
+    if(!name){ banner.innerHTML = '<div class="banner err">Ange ett artistnamn.</div>'; return; }
+    const { error } = await sb.auth.signUp({ email, password, options:{ data:{ name } } });
+    if(error){ banner.innerHTML = '<div class="banner err">'+escapeHtml(error.message)+'</div>'; return; }
+    banner.innerHTML = '<div class="banner ok">Konto skapat. Beroende på dina Supabase-inställningar kanske du behöver bekräfta e-posten först — annars är du redan inloggad.</div>';
+  } else {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ banner.innerHTML = '<div class="banner err">'+escapeHtml(error.message)+'</div>'; return; }
+  }
+}
+async function logout(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if(session && session.user){
+    currentUser = session.user;
+    await loadProfile();
+  } else {
+    document.getElementById('gate').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+async function loadProfile(){
+  let { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if(!data){
+    // profilraden skapas av en databastrigger vid registrering — vänta och försök igen en gång
+    await new Promise(r=>setTimeout(r,800));
+    ({ data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single());
+  }
+  profile = data;
+  if(!profile) return;
+  if(profile.is_banned){
+    document.getElementById('gateBanner').innerHTML = '<div class="banner err">Det här kontot är avstängt av en admin.</div>';
+    await sb.auth.signOut();
+    return;
+  }
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('adminTabBtn').style.display = profile.is_admin ? 'block' : 'none';
+  selectedGenres = new Set(profile.preferred_genres || []);
+  populateGenreSelect();
+  initGenreChips();
+  populateCountrySelect();
+  renderAll();
+}
+
+// ---- TABS ----
+function setTab(name){
+  ['listen','upload','mine','community','profile','admin'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = (t===name)?'block':'none';
+    document.querySelector('.tab[data-tab="'+t+'"]').classList.toggle('active', t===name);
+  });
+  if(name==='mine') renderMyTracks();
+  if(name==='listen') renderQueue();
+  if(name==='community') renderCommunity();
+  if(name==='profile') renderProfileForm();
+  if(name==='admin') renderAdmin();
+}
+
+function renderAll(){
+  document.getElementById('userNameDisplay').textContent = profile.name;
+  renderMeter();
+  renderReputation();
+  renderQueue();
+}
+
+// ---- TRUST / BADGES ----
+function computeTrust(p){
+  const pos = p.ratings_pos||0, neg = p.ratings_neg||0, total = pos+neg;
+  const ratio = (pos+1)/(total+2);
+  let level='ny', label='Ny recensent';
+  if(total>=5 && ratio<0.4){ level='omtvistad'; label='Omtvistad'; }
+  else if(total>=30 && ratio>=0.9){ level='expert'; label='Expert'; }
+  else if(total>=15 && ratio>=0.75){ level='betrodd'; label='Betrodd'; }
+  else if(total>=5 && ratio>=0.6){ level='palitlig'; label='Pålitlig'; }
+  return {level,label,ratio,total,pos,neg};
+}
+function badgeHtml(p){ const t=computeTrust(p); return `<span class="badge ${t.level}"><i></i>${t.label}</span>`; }
+
+function renderMeter(){
+  const c = profile.credits;
+  document.getElementById('creditNum').textContent = c;
+  const meter = document.getElementById('meter'); meter.innerHTML = '';
+  for(let i=0;i<10;i++){
+    const b = document.createElement('i');
+    b.style.height = (6+i*1.3)+'px';
+    if(i<c){ b.classList.add('on'); if(i>=7) b.classList.add('hot'); }
+    meter.appendChild(b);
+  }
+}
+function renderReputation(){
+  const t = computeTrust(profile);
+  const el = document.getElementById('repBadge');
+  el.className = 'badge '+t.level; el.innerHTML = '<i></i>'+t.label;
+  document.getElementById('repStat').textContent = t.total===0 ? 'inga omdömen än' : Math.round(t.ratio*100)+'% hjälpsam · '+t.total+' omdömen';
+}
+
+// ---- GENRES ----
+function populateGenreSelect(){ document.getElementById('upGenre').innerHTML = GENRES.map(g=>`<option value="${g}">${g}</option>`).join(''); }
+function initGenreChips(){
+  const wrap = document.getElementById('genreChips'); wrap.innerHTML='';
+  GENRES.forEach(g=>{
+    const el = document.createElement('div');
+    el.className = 'chip' + (selectedGenres.has(g)?' on':'');
+    el.textContent = g;
+    el.onclick = async ()=>{
+      selectedGenres.has(g) ? selectedGenres.delete(g) : selectedGenres.add(g);
+      el.classList.toggle('on');
+      await sb.rpc('set_preferred_genres', { p_genres: Array.from(selectedGenres) });
+      renderQueue();
+    };
+    wrap.appendChild(el);
+  });
+}
+function populateCountrySelect(){
+  const sel = document.getElementById('profCountry');
+  sel.innerHTML = '<option value="">Välj land...</option>' + COUNTRIES.map(([c,n])=>`<option value="${c}">${flagEmoji(c)} ${n}</option>`).join('');
+}
+
+// ---- QUEUE / LISTEN ----
+function parseEmbed(url){
+  url = url.trim();
+  let m = url.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/);
+  if(m) return {type:'spotify', id:m[1], embedUrl:'https://open.spotify.com/embed/track/'+m[1]};
+  m = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/embed\/)([a-zA-Z0-9_-]{6,})/);
+  if(m) return {type:'youtube', id:m[1], embedUrl:'https://www.youtube.com/embed/'+m[1]};
+  return null;
+}
+
+async function renderQueue(){
+  const wrap = document.getElementById('queueList');
+  if(selectedGenres.size===0){
+    wrap.innerHTML = '<div class="empty-state">Välj minst en genre ovan för att se din lyssningskö.</div>';
+    return;
+  }
+  wrap.innerHTML = '<div class="empty-state">Laddar...</div>';
+
+  const { data: myReviews } = await sb.from('feedback').select('track_id').eq('listener_id', currentUser.id);
+  const reviewedIds = (myReviews||[]).map(r=>r.track_id);
+
+  let query = sb.from('tracks').select('*').neq('owner_id', currentUser.id).in('genre', Array.from(selectedGenres));
+  if(reviewedIds.length) query = query.not('id','in',`(${reviewedIds.join(',')})`);
+  const { data: tracks, error } = await query;
+  if(error){ wrap.innerHTML = '<div class="empty-state">Kunde inte hämta kön: '+escapeHtml(error.message)+'</div>'; return; }
+
+  const q = (tracks||[]).filter(t=>t.feedback_count < t.slots_target)
+    .sort((a,b)=> a.feedback_count-b.feedback_count || Math.random()-0.5);
+
+  if(q.length===0){ wrap.innerHTML = '<div class="empty-state">Inga låtar väntar just nu i valda genrer.</div>'; return; }
+
+  wrap.innerHTML='';
+  q.forEach((t,i)=>{
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.onclick = ()=>openSheet(t);
+    row.innerHTML = `
+      <div class="track-idx">${String(i+1).padStart(2,'0')}</div>
+      <div class="track-info">
+        <div class="track-title">${escapeHtml(t.title)}</div>
+        <div class="track-meta">${t.genre} · ${t.embed_type}</div>
+      </div>
+      <div class="reels">${reelsHtml(t)}</div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+function reelsHtml(t){ let out=''; for(let i=0;i<t.slots_target;i++) out+=`<div class="reel ${i<t.feedback_count?'filled':''}"></div>`; return out; }
+
+function openSheet(t){
+  activeTrackId = t.id;
+  document.getElementById('sheetGenre').textContent = t.genre;
+  document.getElementById('sheetTitle').textContent = t.title;
+  document.getElementById('sheetOwner').textContent = '';
+  document.getElementById('sheetBanner').innerHTML = '';
+  const embedWrap = document.getElementById('sheetEmbed');
+  embedWrap.innerHTML = t.embed_type==='spotify'
+    ? `<iframe src="${t.embed_url_full || 'https://open.spotify.com/embed/track/'+t.embed_id}" width="100%" height="152" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
+    : `<iframe src="https://www.youtube.com/embed/${t.embed_id}" width="100%" height="260" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+  document.getElementById('fbText').value = '';
+  updateCounter();
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSheet(){ document.getElementById('overlay').classList.remove('open'); activeTrackId=null; }
+
+function updateCounter(){
+  const val = document.getElementById('fbText').value;
+  const chars = val.trim().length;
+  const words = val.trim().split(/\s+/).filter(Boolean).length;
+  const cEl = document.getElementById('charCount'), wEl = document.getElementById('wordCount');
+  cEl.textContent = chars+' / 100 tecken'; wEl.textContent = words+' / 15 ord';
+  cEl.classList.toggle('ok', chars>=100); wEl.classList.toggle('ok', words>=15);
+  document.getElementById('submitFbBtn').disabled = !(chars>=100 && words>=15);
+}
+
+async function submitFeedback(){
+  const text = document.getElementById('fbText').value.trim();
+  const banner = document.getElementById('sheetBanner');
+  const { error } = await sb.rpc('submit_feedback', { p_track_id: activeTrackId, p_text: text });
+  if(error){ banner.innerHTML = '<div class="banner err">'+escapeHtml(error.message)+'</div>'; return; }
+  closeSheet();
+  await loadProfile();
+}
+
+// ---- UPLOAD ----
+async function submitTrack(){
+  const title = document.getElementById('upTitle').value.trim();
+  const url = document.getElementById('upUrl').value.trim();
+  const genre = document.getElementById('upGenre').value;
+  const slots = parseInt(document.getElementById('upSlots').value,10);
+  const banner = document.getElementById('uploadBanner');
+  const parsed = parseEmbed(url);
+  if(!title || !parsed){ banner.innerHTML = '<div class="banner err">Ange en titel och en giltig Spotify- eller YouTube-länk.</div>'; return; }
+
+  const { error } = await sb.rpc('submit_track', {
+    p_title: title, p_url: url, p_embed_type: parsed.type, p_embed_id: parsed.id, p_genre: genre, p_slots: slots
+  });
+  if(error){ banner.innerHTML = '<div class="banner err">'+escapeHtml(error.message)+'</div>'; return; }
+  banner.innerHTML = '<div class="banner ok">Låten är inlagd i kön.</div>';
+  document.getElementById('upTitle').value=''; document.getElementById('upUrl').value='';
+  await loadProfile();
+}
+
+// ---- MY TRACKS ----
+async function renderMyTracks(){
+  const wrap = document.getElementById('myTracksList');
+  wrap.innerHTML = '<div class="empty-state">Laddar...</div>';
+  const { data: mine } = await sb.from('tracks').select('*').eq('owner_id', currentUser.id).order('created_at',{ascending:false});
+  if(!mine || mine.length===0){ wrap.innerHTML = '<div class="empty-state">Du har inte lagt upp någon låt ännu.</div>'; return; }
+
+  wrap.innerHTML='';
+  for(const t of mine){
+    const { data: feedbackRows } = await sb.from('feedback').select('*').eq('track_id', t.id);
+    const listenerIds = (feedbackRows||[]).map(f=>f.listener_id);
+    let listenerMap = {};
+    if(listenerIds.length){
+      const { data: listeners } = await sb.from('public_profiles').select('*').in('id', listenerIds);
+      (listeners||[]).forEach(l=> listenerMap[l.id] = l);
+    }
+    const box = document.createElement('div');
+    box.className = 'my-track';
+    const bodyId = 'body_'+t.id;
+    box.innerHTML = `
+      <div class="my-track-head" onclick="toggleMyTrack('${bodyId}')">
+        <div>
+          <div class="track-title">${escapeHtml(t.title)}</div>
+          <div class="track-meta">${t.genre} · ${t.feedback_count}/${t.slots_target} lyssningar</div>
+        </div>
+        <div class="reels">${reelsHtml(t)}</div>
+      </div>
+      <div class="my-track-body" id="${bodyId}">
+        ${(feedbackRows&&feedbackRows.length>0) ? '<p class="rate-guidance">Betygsätt om kommentaren var konkret och konstruktiv — inte om du höll med om den. Negativa betyg kräver en motivering.</p>' : ''}
+        ${(!feedbackRows||feedbackRows.length===0) ? '<p class="hint" style="padding-top:12px;">Ingen feedback ännu.</p>' :
+          feedbackRows.map(f=>`
+            <div class="fb-item">
+              <div class="fb-meta"><span>${escapeHtml(listenerMap[f.listener_id]?.name || 'Okänd')}</span>${listenerMap[f.listener_id] ? badgeHtml(listenerMap[f.listener_id]) : ''}</div>
+              ${escapeHtml(f.text)}
+              ${renderRatingControl(t.id, f)}
+            </div>
+          `).join('')}
+      </div>
+    `;
+    wrap.appendChild(box);
+  }
+}
+function toggleMyTrack(id){ document.getElementById(id).classList.toggle('open'); }
+
+function renderRatingControl(trackId, f){
+  if(f.rated===true) return '<div class="rated-label">Du markerade den som "hjälpsam".</div>';
+  if(f.rated===false) return '<div class="rated-label">Du markerade den som "inte hjälpsam"'+(f.rating_reason?': "'+escapeHtml(f.rating_reason)+'"':'')+'</div>';
+  if(downvotePrompt.has(f.id)){
+    return `
+      <div class="reason-box">
+        <label class="label">Varför var den inte hjälpsam?</label>
+        <textarea id="reason_${f.id}" placeholder="var konkret..."></textarea>
+        <div class="row2">
+          <button class="btn ghost" onclick="cancelDownvote('${f.id}')">Avbryt</button>
+          <button class="btn" onclick="confirmDownvote('${trackId}','${f.id}')">Bekräfta</button>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="rate-row">
+      <button class="rate-btn" onclick="rateFeedback('${trackId}','${f.id}',true)">👍 Hjälpsam</button>
+      <button class="rate-btn" onclick="openDownvotePrompt('${f.id}')">👎 Inte hjälpsam</button>
+    </div>`;
+}
+function openDownvotePrompt(id){ downvotePrompt.add(id); renderMyTracks(); }
+function cancelDownvote(id){ downvotePrompt.delete(id); renderMyTracks(); }
+async function confirmDownvote(trackId, feedbackId){
+  const reasonEl = document.getElementById('reason_'+feedbackId);
+  const reason = reasonEl.value.trim();
+  if(reason.length<10){ reasonEl.style.borderColor='var(--accent)'; return; }
+  await rateFeedback(trackId, feedbackId, false, reason);
+  downvotePrompt.delete(feedbackId);
+}
+async function rateFeedback(trackId, feedbackId, helpful, reason){
+  const { error } = await sb.rpc('rate_feedback', { p_feedback_id: feedbackId, p_helpful: helpful, p_reason: reason||null });
+  if(error){ alert(error.message); return; }
+  renderMyTracks();
+}
+
+// ---- COMMUNITY / MAP ----
+async function renderCommunity(){
+  const grid = document.getElementById('communityGrid');
+  const countryWrap = document.getElementById('countryList');
+  grid.innerHTML = '<div class="empty-state">Laddar...</div>';
+  const { data: members } = await sb.from('public_profiles').select('*').order('created_at',{ascending:false});
+  grid.innerHTML = '';
+  (members||[]).forEach(m=>{
+    const card = document.createElement('div');
+    card.className = 'member-card';
+    card.innerHTML = `
+      <div class="member-name">${m.country ? flagEmoji(m.country) : ''} ${escapeHtml(m.name)}</div>
+      <div style="margin-top:6px;">${badgeHtml(m)}</div>
+      ${m.bio ? `<div class="member-bio">${escapeHtml(m.bio)}</div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+  if((members||[]).length===0) grid.innerHTML = '<div class="empty-state">Inga medlemmar än.</div>';
+
+  const counts = {};
+  (members||[]).forEach(m=>{ if(m.country) counts[m.country] = (counts[m.country]||0)+1; });
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(entries.length===0){
+    countryWrap.innerHTML = '<div class="empty-state">Ingen har valt att visas på kartan ännu.</div>';
+  } else {
+    const max = entries[0][1];
+    countryWrap.innerHTML = entries.map(([code,count])=>{
+      const name = (COUNTRIES.find(c=>c[0]===code)||[code,code])[1];
+      return `<div class="country-row">
+        <span>${flagEmoji(code)} ${name}</span>
+        <div class="country-bar-wrap"><div class="country-bar" style="width:${(count/max*100)}%"></div></div>
+        <span>${count}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ---- PROFILE ----
+function renderProfileForm(){
+  document.getElementById('profBio').value = profile.bio || '';
+  document.getElementById('profCountry').value = profile.country || '';
+  document.getElementById('profShowMap').checked = !!profile.show_on_map;
+}
+async function saveProfile(){
+  const bio = document.getElementById('profBio').value.trim();
+  const country = document.getElementById('profCountry').value || null;
+  const showMap = document.getElementById('profShowMap').checked;
+  const banner = document.getElementById('profileBanner');
+  const { error } = await sb.rpc('update_profile_settings', { p_bio: bio, p_country: country, p_show_on_map: showMap });
+  banner.innerHTML = error
+    ? '<div class="banner err">'+escapeHtml(error.message)+'</div>'
+    : '<div class="banner ok">Sparat.</div>';
+  await loadProfile();
+}
+
+// ---- ADMIN ----
+async function renderAdmin(){
+  if(!profile.is_admin) return;
+  const wrap = document.getElementById('adminList');
+  wrap.innerHTML = '<div class="empty-state">Laddar...</div>';
+  const { data: all } = await sb.from('profiles').select('*').order('name');
+  wrap.innerHTML='';
+  (all||[]).forEach(u=>{
+    const t = computeTrust(u);
+    const row = document.createElement('div');
+    row.className = 'admin-row';
+    row.innerHTML = `
+      <div class="admin-name">
+        ${escapeHtml(u.name)} ${u.is_admin?'<span class="label">(admin)</span>':''}
+        ${u.is_banned?'<span class="banned-tag">Avstängd</span>':''}
+        <div class="badge ${t.level}" style="margin-top:4px;"><i></i>${t.label}</div>
+      </div>
+      <div class="admin-credit-ctrl">
+        <button class="mini-btn" onclick="adminAdjustCredits('${u.id}',-1)">−</button>
+        <span class="credit-num" style="font-size:14px;">${u.credits}</span>
+        <button class="mini-btn" onclick="adminAdjustCredits('${u.id}',1)">+</button>
+      </div>
+      <button class="ban-btn ${u.is_banned?'is-banned':''}" onclick="adminToggleBan('${u.id}')">${u.is_banned?'Återaktivera':'Spärra'}</button>
+    `;
+    wrap.appendChild(row);
+  });
+}
+async function adminAdjustCredits(userId, delta){
+  const { error } = await sb.rpc('admin_adjust_credits', { p_user_id: userId, p_delta: delta });
+  if(error){ alert(error.message); return; }
+  renderAdmin();
+}
+async function adminToggleBan(userId){
+  const { error } = await sb.rpc('admin_toggle_ban', { p_user_id: userId });
+  if(error){ alert(error.message); return; }
+  renderAdmin();
+}
+</script>
+</body>
+</html>
