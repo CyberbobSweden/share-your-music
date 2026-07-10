@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,28 +23,31 @@
     <div class="user-panel">
       <div>
         <div class="user-name" id="userNameDisplay"></div>
-        <button class="switch-link" onclick="logout()">logga ut</button>
+        <button class="switch-link" onclick="logout()">sign out</button>
       </div>
       <div>
         <div class="meter" id="meter"></div>
         <div class="credit-num" id="creditNum">0</div>
+        <div class="rep-stat" style="text-align:right;">credits</div>
         <div class="rep-line"><span class="rep-stat" id="repStat"></span><span class="badge" id="repBadge"></span></div>
       </div>
     </div>
   </div>
 
+  <div class="alert" id="verifyBanner" style="display:none;margin-top:16px;"></div>
+
   <div class="tabs">
-    <div class="tab active" data-tab="listen" onclick="setTab('listen')">Lyssna</div>
-    <div class="tab" data-tab="upload" onclick="setTab('upload')">Ladda upp</div>
-    <div class="tab" data-tab="mine" onclick="setTab('mine')">Mina låtar</div>
-    <div class="tab" data-tab="community" onclick="setTab('community')">Community</div>
-    <div class="tab" data-tab="profile" onclick="setTab('profile')">Profil</div>
+    <div class="tab active" data-tab="listen" onclick="setTab('listen')">Listen</div>
+    <div class="tab" data-tab="upload" onclick="setTab('upload')">Upload</div>
+    <div class="tab" data-tab="mine" onclick="setTab('mine')">My Tracks</div>
+    <div class="tab" data-tab="community" onclick="setTab('community')">Community &amp; Map</div>
+    <div class="tab" data-tab="profile" onclick="setTab('profile')">Profile</div>
   </div>
 
   <div id="tab-listen">
     <div class="panel">
-      <h3 class="section-title">Lyssningskö</h3>
-      <p class="section-sub">Varje låt kräver skriven feedback — minst 100 tecken och 15 ord.</p>
+      <h3 class="section-title">Listening Queue</h3>
+      <p class="section-sub">Every track requires written feedback — at least 100 characters and 15 words.</p>
       <div class="chips" id="genreChips"></div>
       <div id="queueList"></div>
     </div>
@@ -52,60 +55,61 @@
 
   <div id="tab-upload" style="display:none;">
     <div class="panel">
-      <h3 class="section-title">Lägg upp en låt</h3>
-      <p class="section-sub">Klistra in en länk från Spotify eller YouTube.</p>
+      <h3 class="section-title">Upload a track</h3>
+      <p class="section-sub">Paste a link from Spotify or YouTube.</p>
       <div class="alert error" id="uploadBanner"></div>
-      <div class="field"><label>Låttitel</label><input type="text" id="upTitle" placeholder="t.ex. Midnight Static"></div>
-      <div class="field"><label>Länk (Spotify eller YouTube)</label><input type="text" id="upUrl" placeholder="https://open.spotify.com/track/... eller https://youtu.be/..."></div>
+      <div class="field"><label>Track title</label><input type="text" id="upTitle" placeholder="e.g. Midnight Static"></div>
+      <div class="field"><label>Link (Spotify or YouTube)</label><input type="text" id="upUrl" placeholder="https://open.spotify.com/track/... or https://youtu.be/..."></div>
       <div class="row2">
         <div class="field"><label>Genre</label><select id="upGenre"></select></div>
-        <div class="field"><label>Antal lyssningar</label>
+        <div class="field"><label>Number of listens</label>
           <select id="upSlots">
-            <option value="3">3 lyssningar — 3 poäng</option>
-            <option value="5">5 lyssningar — 5 poäng</option>
-            <option value="8">8 lyssningar — 8 poäng</option>
+            <option value="3">3 listens — 3 credits</option>
+            <option value="5">5 listens — 5 credits</option>
+            <option value="8">8 listens — 8 credits</option>
           </select>
         </div>
       </div>
-      <button class="btn full" onclick="submitTrack()">Skicka in låt</button>
+      <button class="btn full" onclick="submitTrack()">Submit track</button>
     </div>
   </div>
 
   <div id="tab-mine" style="display:none;">
     <div class="panel">
-      <h3 class="section-title">Mina inskickade låtar</h3>
-      <div class="privacy-note">Feedback här skyddas på servern — API:et vägrar lämna ut den till någon annan än dig (eller admin), oavsett vad gränssnittet visar.</div>
+      <h3 class="section-title">Your submitted tracks</h3>
+      <div class="privacy-note">Feedback here is protected on the server — the API refuses to hand it to anyone but you (or an admin), no matter what the interface shows.</div>
       <div id="myTracksList"></div>
     </div>
   </div>
 
   <div id="tab-community" style="display:none;">
     <div class="panel">
-      <h3 class="section-title">Medlemmar</h3>
-      <p class="section-sub">Alla som gett feedback här, med sitt rykte.</p>
+      <h3 class="section-title">Members</h3>
+      <p class="section-sub">Everyone who's given feedback here, with their reputation.</p>
       <div class="card-grid" id="communityGrid"></div>
     </div>
     <div class="panel">
-      <h3 class="section-title">Var i världen?</h3>
-      <p class="section-sub">Bara de som själva valt att synas på kartan visas här, per land.</p>
+      <h3 class="section-title">🌍 Where in the world?</h3>
+      <p class="section-sub">Only members who opted in on their Profile page show up here, by country only — never an exact location.</p>
       <div id="countryList"></div>
     </div>
   </div>
 
   <div id="tab-profile" style="display:none;">
     <div class="panel">
-      <h3 class="section-title">Din profil</h3>
+      <h3 class="section-title">Your profile</h3>
       <div class="alert" id="profileBanner"></div>
-      <div class="field"><label>Om dig</label><textarea id="profBio" style="min-height:80px;" placeholder="Vad gör du för musik?"></textarea></div>
+      <div class="field"><label>About you</label><textarea id="profBio" style="min-height:80px;" placeholder="What kind of music do you make?"></textarea></div>
       <div class="row2">
-        <div class="field"><label>Land</label><select id="profCountry"></select></div>
+        <div class="field"><label>Country</label><select id="profCountry"></select></div>
         <div class="field" style="display:flex;align-items:flex-end;gap:8px;">
           <label style="margin:0;display:flex;align-items:center;gap:8px;font-size:12px;text-transform:none;letter-spacing:0;">
-            <input type="checkbox" id="profShowMap" style="width:auto;"> Visa mig på kartan
+            <input type="checkbox" id="profShowMap" style="width:auto;"> Show me on the map
           </label>
         </div>
       </div>
-      <button class="btn full" onclick="saveProfile()">Spara</button>
+      <p class="hint">The map lives on the <strong>Community &amp; Map</strong> tab — turn this on and pick a country to appear there.</p>
+      <button class="btn full" onclick="saveProfile()">Save</button>
     </div>
   </div>
 </div>
@@ -116,30 +120,30 @@
     <div class="label" id="sheetGenre"></div>
     <h2 id="sheetTitle" style="margin:6px 0 2px;font-size:19px;"></h2>
     <div class="embed-wrap" id="sheetEmbed"></div>
-    <div class="embed-note">Fullängdsuppspelning kan kräva inloggning hos Spotify/YouTube.</div>
+    <div class="embed-note">Full-length playback may require you to be signed in with Spotify/YouTube.</div>
     <div style="margin-top:20px;">
-      <label class="label">Din feedback (obligatorisk)</label>
-      <textarea id="fbText" placeholder="Vad funkar? Vad skulle du ändra? Var konkret..." oninput="updateCounter()"></textarea>
-      <div class="counter-row"><span id="charCount">0 / 100 tecken</span><span id="wordCount">0 / 15 ord</span></div>
+      <label class="label">Your feedback (required)</label>
+      <textarea id="fbText" placeholder="What works? What would you change? Be specific..." oninput="updateCounter()"></textarea>
+      <div class="counter-row"><span id="charCount">0 / 100 characters</span><span id="wordCount">0 / 15 words</span></div>
     </div>
     <div class="alert error" id="sheetBanner"></div>
-    <button class="btn full" id="submitFbBtn" disabled onclick="submitFeedback()">Skicka feedback</button>
+    <button class="btn full" id="submitFbBtn" disabled onclick="submitFeedback()">Submit feedback</button>
   </div>
 </div>
 
 <script src="/assets/app.js"></script>
 <script>
-const GENRES = ['Pop','Hip-Hop','R&B','Rock','Indie','Elektronisk','Metal','Folk','Jazz','Klassiskt','Country','Latin'];
+const GENRES = ['Pop','Hip-Hop','R&B','Rock','Indie','Electronic','Metal','Folk','Jazz','Classical','Country','Latin'];
 const COUNTRIES = [
-  ['SE','Sverige'],['NO','Norge'],['DK','Danmark'],['FI','Finland'],['IS','Island'],
-  ['DE','Tyskland'],['FR','Frankrike'],['GB','Storbritannien'],['IE','Irland'],['NL','Nederländerna'],
-  ['BE','Belgien'],['ES','Spanien'],['PT','Portugal'],['IT','Italien'],['PL','Polen'],
-  ['AT','Österrike'],['CH','Schweiz'],['GR','Grekland'],['CZ','Tjeckien'],['HU','Ungern'],
-  ['EE','Estland'],['LV','Lettland'],['LT','Litauen'],['UA','Ukraina'],['RO','Rumänien'],
-  ['US','USA'],['CA','Kanada'],['MX','Mexiko'],['BR','Brasilien'],['AR','Argentina'],
-  ['AU','Australien'],['NZ','Nya Zeeland'],['JP','Japan'],['KR','Sydkorea'],['CN','Kina'],
-  ['IN','Indien'],['ZA','Sydafrika'],['NG','Nigeria'],['KE','Kenya'],['EG','Egypten'],
-  ['AE','Förenade Arabemiraten'],['TR','Turkiet'],['RU','Ryssland']
+  ['SE','Sweden'],['NO','Norway'],['DK','Denmark'],['FI','Finland'],['IS','Iceland'],
+  ['DE','Germany'],['FR','France'],['GB','United Kingdom'],['IE','Ireland'],['NL','Netherlands'],
+  ['BE','Belgium'],['ES','Spain'],['PT','Portugal'],['IT','Italy'],['PL','Poland'],
+  ['AT','Austria'],['CH','Switzerland'],['GR','Greece'],['CZ','Czechia'],['HU','Hungary'],
+  ['EE','Estonia'],['LV','Latvia'],['LT','Lithuania'],['UA','Ukraine'],['RO','Romania'],
+  ['US','United States'],['CA','Canada'],['MX','Mexico'],['BR','Brazil'],['AR','Argentina'],
+  ['AU','Australia'],['NZ','New Zealand'],['JP','Japan'],['KR','South Korea'],['CN','China'],
+  ['IN','India'],['ZA','South Africa'],['NG','Nigeria'],['KE','Kenya'],['EG','Egypt'],
+  ['AE','United Arab Emirates'],['TR','Turkey'],['RU','Russia']
 ];
 
 const auth = requireAuthOrRedirect();
@@ -158,7 +162,21 @@ async function init(){
   populateGenreSelect();
   initGenreChips();
   populateCountrySelect();
+  renderVerifyBanner();
   renderAll();
+}
+
+function renderVerifyBanner(){
+  const el = document.getElementById('verifyBanner');
+  if(profile.email_verified){ el.style.display = 'none'; return; }
+  el.className = 'alert error';
+  el.style.display = 'block';
+  el.innerHTML = `Please verify your email address — check your inbox for a link. <button class="switch-link" style="margin-left:6px;" onclick="resendVerification()">Resend email</button>`;
+}
+async function resendVerification(){
+  const res = await apiFetch('/auth/resend-verification', { method:'POST' });
+  const el = document.getElementById('verifyBanner');
+  el.innerHTML = (res && res.ok) ? 'Verification email sent — check your inbox.' : (res?.data?.error || 'Could not send email right now.');
 }
 
 function setTab(name){
@@ -194,7 +212,7 @@ function renderReputation(){
   const t = computeTrust(profile);
   const el = document.getElementById('repBadge');
   el.className = 'badge '+t.level; el.innerHTML = '<i></i>'+t.label;
-  document.getElementById('repStat').textContent = t.total===0 ? 'inga omdömen än' : Math.round(t.ratio*100)+'% hjälpsam · '+t.total+' omdömen';
+  document.getElementById('repStat').textContent = t.total===0 ? 'no ratings yet' : Math.round(t.ratio*100)+'% helpful · '+t.total+' ratings';
 }
 
 function populateGenreSelect(){ document.getElementById('upGenre').innerHTML = GENRES.map(g=>`<option value="${g}">${g}</option>`).join(''); }
@@ -215,7 +233,7 @@ function initGenreChips(){
 }
 function populateCountrySelect(){
   const sel = document.getElementById('profCountry');
-  sel.innerHTML = '<option value="">Välj land...</option>' + COUNTRIES.map(([c,n])=>`<option value="${c}">${flagEmoji(c)} ${n}</option>`).join('');
+  sel.innerHTML = '<option value="">Select country...</option>' + COUNTRIES.map(([c,n])=>`<option value="${c}">${flagEmoji(c)} ${n}</option>`).join('');
 }
 
 function parseEmbed(url){
@@ -230,14 +248,14 @@ function parseEmbed(url){
 async function renderQueue(){
   const wrap = document.getElementById('queueList');
   if(selectedGenres.size===0){
-    wrap.innerHTML = '<div class="empty-state">Välj minst en genre ovan för att se din lyssningskö.</div>';
+    wrap.innerHTML = '<div class="empty-state">Select at least one genre above to see your listening queue.</div>';
     return;
   }
-  wrap.innerHTML = '<div class="empty-state">Laddar...</div>';
+  wrap.innerHTML = '<div class="empty-state">Loading...</div>';
   const res = await apiFetch('/tracks?genres=' + encodeURIComponent(Array.from(selectedGenres).join(',')));
-  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Kunde inte hämta kön.</div>'; return; }
+  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load the queue.</div>'; return; }
   const q = res.data.tracks || [];
-  if(q.length===0){ wrap.innerHTML = '<div class="empty-state">Inga låtar väntar just nu i valda genrer.</div>'; return; }
+  if(q.length===0){ wrap.innerHTML = '<div class="empty-state">No tracks waiting right now in your selected genres.</div>'; return; }
 
   wrap.innerHTML='';
   q.forEach((t,i)=>{
@@ -277,7 +295,7 @@ function updateCounter(){
   const chars = val.trim().length;
   const words = val.trim().split(/\s+/).filter(Boolean).length;
   const cEl = document.getElementById('charCount'), wEl = document.getElementById('wordCount');
-  cEl.textContent = chars+' / 100 tecken'; wEl.textContent = words+' / 15 ord';
+  cEl.textContent = chars+' / 100 characters'; wEl.textContent = words+' / 15 words';
   cEl.classList.toggle('ok', chars>=100); wEl.classList.toggle('ok', words>=15);
   document.getElementById('submitFbBtn').disabled = !(chars>=100 && words>=15);
 }
@@ -286,7 +304,7 @@ async function submitFeedback(){
   const text = document.getElementById('fbText').value.trim();
   const res = await apiFetch(`/tracks/${activeTrackId}/feedback`, { method:'POST', body: JSON.stringify({ text }) });
   if(!res) return;
-  if(!res.ok){ showAlert('sheetBanner', res.data?.error || 'Något gick fel.'); return; }
+  if(!res.ok){ showAlert('sheetBanner', res.data?.error || 'Something went wrong.'); return; }
   closeSheet();
   await init();
 }
@@ -298,26 +316,26 @@ async function submitTrack(){
   const slots = parseInt(document.getElementById('upSlots').value,10);
   hideAlert('uploadBanner');
   const parsed = parseEmbed(url);
-  if(!title || !parsed){ showAlert('uploadBanner','Ange en titel och en giltig Spotify- eller YouTube-länk.'); return; }
+  if(!title || !parsed){ showAlert('uploadBanner','Enter a title and a valid Spotify or YouTube link.'); return; }
 
   const res = await apiFetch('/tracks', {
     method:'POST',
     body: JSON.stringify({ title, url, embed_type: parsed.type, embed_id: parsed.id, genre, slots })
   });
   if(!res) return;
-  if(!res.ok){ showAlert('uploadBanner', res.data?.error || 'Något gick fel.'); return; }
-  showAlert('uploadBanner','Låten är inlagd i kön.','success');
+  if(!res.ok){ showAlert('uploadBanner', res.data?.error || 'Something went wrong.'); return; }
+  showAlert('uploadBanner','Your track is in the queue.','success');
   document.getElementById('upTitle').value=''; document.getElementById('upUrl').value='';
   await init();
 }
 
 async function renderMyTracks(){
   const wrap = document.getElementById('myTracksList');
-  wrap.innerHTML = '<div class="empty-state">Laddar...</div>';
+  wrap.innerHTML = '<div class="empty-state">Loading...</div>';
   const res = await apiFetch('/tracks/mine');
-  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Kunde inte hämta dina låtar.</div>'; return; }
+  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load your tracks.</div>'; return; }
   const mine = res.data.tracks || [];
-  if(mine.length===0){ wrap.innerHTML = '<div class="empty-state">Du har inte lagt upp någon låt ännu.</div>'; return; }
+  if(mine.length===0){ wrap.innerHTML = '<div class="empty-state">You have not submitted a track yet.</div>'; return; }
 
   wrap.innerHTML='';
   for(const t of mine){
@@ -330,13 +348,13 @@ async function renderMyTracks(){
       <div class="my-track-head" onclick="toggleMyTrack('${bodyId}')">
         <div>
           <div class="track-title">${escapeHtml(t.title)}</div>
-          <div class="track-meta">${t.genre} · ${t.feedback_count}/${t.slots_target} lyssningar</div>
+          <div class="track-meta">${t.genre} · ${t.feedback_count}/${t.slots_target} listens</div>
         </div>
         <div class="reels">${reelsHtml(t)}</div>
       </div>
       <div class="my-track-body" id="${bodyId}">
-        ${feedbackRows.length>0 ? '<p class="rate-guidance">Betygsätt om kommentaren var konkret och konstruktiv — inte om du höll med om den. Negativa betyg kräver en motivering.</p>' : ''}
-        ${feedbackRows.length===0 ? '<p class="hint" style="padding-top:12px;">Ingen feedback ännu.</p>' :
+        ${feedbackRows.length>0 ? '<p class="rate-guidance">Rate whether the comment was specific and constructive — not whether you agreed with it. A negative rating requires a reason.</p>' : ''}
+        ${feedbackRows.length===0 ? '<p class="hint" style="padding-top:12px;">No feedback yet.</p>' :
           feedbackRows.map(f=>`
             <div class="fb-item">
               <div class="fb-meta"><span>${escapeHtml(f.listener_name)}</span>${badgeHtml({ratings_pos:f.ratings_pos, ratings_neg:f.ratings_neg})}</div>
@@ -352,23 +370,23 @@ async function renderMyTracks(){
 function toggleMyTrack(id){ document.getElementById(id).classList.toggle('open'); }
 
 function renderRatingControl(trackId, f){
-  if(f.rated===1) return '<div class="rated-label">Du markerade den som "hjälpsam".</div>';
-  if(f.rated===0) return '<div class="rated-label">Du markerade den som "inte hjälpsam"'+(f.rating_reason?': "'+escapeHtml(f.rating_reason)+'"':'')+'</div>';
+  if(f.rated===1) return '<div class="rated-label">You marked this as "helpful".</div>';
+  if(f.rated===0) return '<div class="rated-label">You marked this as "not helpful"'+(f.rating_reason?': "'+escapeHtml(f.rating_reason)+'"':'')+'</div>';
   if(downvotePrompt.has(f.id)){
     return `
       <div class="reason-box">
-        <label class="label">Varför var den inte hjälpsam?</label>
-        <textarea id="reason_${f.id}" placeholder="var konkret..."></textarea>
+        <label class="label">Why wasn't it helpful?</label>
+        <textarea id="reason_${f.id}" placeholder="be specific..."></textarea>
         <div class="row2">
-          <button class="btn ghost" onclick="cancelDownvote('${f.id}')">Avbryt</button>
-          <button class="btn" onclick="confirmDownvote('${trackId}','${f.id}')">Bekräfta</button>
+          <button class="btn ghost" onclick="cancelDownvote('${f.id}')">Cancel</button>
+          <button class="btn" onclick="confirmDownvote('${trackId}','${f.id}')">Confirm</button>
         </div>
       </div>`;
   }
   return `
     <div class="rate-row">
-      <button class="rate-btn" onclick="rateFeedback('${trackId}','${f.id}',true)">👍 Hjälpsam</button>
-      <button class="rate-btn" onclick="openDownvotePrompt('${f.id}')">👎 Inte hjälpsam</button>
+      <button class="rate-btn" onclick="rateFeedback('${trackId}','${f.id}',true)">👍 Helpful</button>
+      <button class="rate-btn" onclick="openDownvotePrompt('${f.id}')">👎 Not helpful</button>
     </div>`;
 }
 function openDownvotePrompt(id){ downvotePrompt.add(id); renderMyTracks(); }
@@ -382,14 +400,14 @@ async function confirmDownvote(trackId, feedbackId){
 }
 async function rateFeedback(trackId, feedbackId, helpful, reason){
   const res = await apiFetch(`/feedback/${feedbackId}/rate`, { method:'POST', body: JSON.stringify({ helpful, reason: reason||null }) });
-  if(!res || !res.ok){ alert(res?.data?.error || 'Något gick fel.'); return; }
+  if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
   renderMyTracks();
 }
 
 async function renderCommunity(){
   const grid = document.getElementById('communityGrid');
   const countryWrap = document.getElementById('countryList');
-  grid.innerHTML = '<div class="empty-state">Laddar...</div>';
+  grid.innerHTML = '<div class="empty-state">Loading...</div>';
   const res = await apiFetch('/community');
   const members = (res && res.ok) ? res.data.members : [];
   grid.innerHTML = '';
@@ -403,13 +421,13 @@ async function renderCommunity(){
     `;
     grid.appendChild(card);
   });
-  if(members.length===0) grid.innerHTML = '<div class="empty-state">Inga medlemmar än.</div>';
+  if(members.length===0) grid.innerHTML = '<div class="empty-state">No members yet.</div>';
 
   const counts = {};
   members.forEach(m=>{ if(m.country) counts[m.country] = (counts[m.country]||0)+1; });
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(entries.length===0){
-    countryWrap.innerHTML = '<div class="empty-state">Ingen har valt att visas på kartan ännu.</div>';
+    countryWrap.innerHTML = '<div class="empty-state">No one has opted into the map yet. Turn it on in your Profile.</div>';
   } else {
     const max = entries[0][1];
     countryWrap.innerHTML = entries.map(([code,count])=>{
@@ -433,8 +451,8 @@ async function saveProfile(){
   const country = document.getElementById('profCountry').value || null;
   const showMap = document.getElementById('profShowMap').checked;
   const res = await apiFetch('/profile', { method:'PUT', body: JSON.stringify({ bio, country, show_on_map: showMap }) });
-  if(!res || !res.ok){ showAlert('profileBanner', res?.data?.error || 'Något gick fel.', 'error'); return; }
-  showAlert('profileBanner','Sparat.','success');
+  if(!res || !res.ok){ showAlert('profileBanner', res?.data?.error || 'Something went wrong.', 'error'); return; }
+  showAlert('profileBanner','Saved.','success');
   await init();
 }
 

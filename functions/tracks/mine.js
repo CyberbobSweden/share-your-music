@@ -10,6 +10,6 @@ export async function onRequestGet({ request, env }) {
     return json({ tracks: results });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }

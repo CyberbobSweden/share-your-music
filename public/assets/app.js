@@ -38,7 +38,7 @@ async function apiFetch(path, options = {}) {
     if (res.status === 401) { clearAuth(); window.location.href = '/index.html'; return null; }
     return { ok: res.ok, status: res.status, data };
   } catch (err) {
-    return { ok: false, status: 0, data: { error: 'Nätverksfel — kontrollera din uppkoppling.' } };
+    return { ok: false, status: 0, data: { error: 'Network error — check your connection.' } };
   }
 }
 
@@ -74,11 +74,11 @@ function flagEmoji(cc) {
 function computeTrust(p) {
   const pos = p.ratings_pos || 0, neg = p.ratings_neg || 0, total = pos + neg;
   const ratio = (pos + 1) / (total + 2);
-  let level = 'ny', label = 'Ny recensent';
-  if (total >= 5 && ratio < 0.4) { level = 'omtvistad'; label = 'Omtvistad'; }
+  let level = 'ny', label = 'New Reviewer';
+  if (total >= 5 && ratio < 0.4) { level = 'omtvistad'; label = 'Disputed'; }
   else if (total >= 30 && ratio >= 0.9) { level = 'expert'; label = 'Expert'; }
-  else if (total >= 15 && ratio >= 0.75) { level = 'betrodd'; label = 'Betrodd'; }
-  else if (total >= 5 && ratio >= 0.6) { level = 'palitlig'; label = 'Pålitlig'; }
+  else if (total >= 15 && ratio >= 0.75) { level = 'betrodd'; label = 'Trusted'; }
+  else if (total >= 5 && ratio >= 0.6) { level = 'palitlig'; label = 'Reliable'; }
   return { level, label, ratio, total };
 }
 function badgeHtml(p) {

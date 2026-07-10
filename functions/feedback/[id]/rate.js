@@ -11,12 +11,12 @@ export async function onRequestPost({ request, env, params }) {
        FROM feedback f JOIN tracks t ON t.id = f.track_id
        WHERE f.id = ?`
     ).bind(params.id).first();
-    if (!row) return json({ error: 'Recensionen finns inte.' }, 404);
-    if (row.track_owner !== user.id) return json({ error: 'Bara låtägaren kan betygsätta feedback.' }, 403);
-    if (row.rated !== null) return json({ error: 'Redan betygsatt.' }, 400);
+    if (!row) return json({ error: 'This review does not exist.' }, 404);
+    if (row.track_owner !== user.id) return json({ error: 'Only the track owner can rate feedback.' }, 403);
+    if (row.rated !== null) return json({ error: 'Already rated.' }, 400);
 
     if (!helpful && (!reason || reason.trim().length < 10)) {
-      return json({ error: 'Ett negativt betyg kräver en motivering på minst 10 tecken.' }, 400);
+      return json({ error: 'A negative rating requires a reason of at least 10 characters.' }, 400);
     }
 
     await env.DB.batch([
@@ -32,6 +32,6 @@ export async function onRequestPost({ request, env, params }) {
     return json({ ok: true });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }

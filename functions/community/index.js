@@ -3,7 +3,7 @@ import { json } from '../_lib/response.js';
 
 export async function onRequestGet({ request, env }) {
   try {
-    await requireAuth(request, env); // måste vara inloggad för att se community, men allt innehåll här är redan publikt tänkt
+    await requireAuth(request, env); // must be signed in to view community, but all content here is meant to be public
     const { results } = await env.DB.prepare(
       `SELECT id, username, bio, ratings_pos, ratings_neg, created_at,
               CASE WHEN show_on_map = 1 THEN country ELSE NULL END AS country
@@ -15,6 +15,6 @@ export async function onRequestGet({ request, env }) {
     return json({ members: results });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }

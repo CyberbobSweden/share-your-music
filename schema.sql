@@ -17,6 +17,8 @@ CREATE TABLE users (
   country TEXT,
   show_on_map INTEGER NOT NULL DEFAULT 0,
   bio TEXT,
+  email_verified INTEGER NOT NULL DEFAULT 0,
+  verification_token TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -20,7 +20,7 @@ export async function onRequestGet({ request, env }) {
     ).bind(user.id, ...genres, user.id).all();
 
     // Liten slumpvis omblandning i minnet — SQLite RANDOM() i ORDER BY
-    // funkar sämre ihop med feedback_count-sorteringen, så vi gör det här istället.
+    // works poorly together with the feedback_count sort, so we do it here instead.
     const shuffled = results
       .map(t => ({ t, r: Math.random() }))
       .sort((a, b) => (a.t.feedback_count - b.t.feedback_count) || (a.r - b.r))
@@ -29,7 +29,7 @@ export async function onRequestGet({ request, env }) {
     return json({ tracks: shuffled });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }
 
@@ -38,11 +38,11 @@ export async function onRequestPost({ request, env }) {
     const user = await requireAuth(request, env);
     const { title, url: trackUrl, embed_type, embed_id, genre, slots } = await request.json().catch(() => ({}));
     if (!title || !trackUrl || !embed_type || !embed_id || !genre || !slots) {
-      return json({ error: 'Alla fält krävs.' }, 400);
+      return json({ error: 'All fields are required.' }, 400);
     }
-    if (![3, 5, 8].includes(Number(slots))) return json({ error: 'Ogiltigt antal lyssningar.' }, 400);
-    if (!['spotify', 'youtube'].includes(embed_type)) return json({ error: 'Ogiltig länktyp.' }, 400);
-    if (user.credits < slots) return json({ error: 'Inte tillräckligt med poäng.' }, 400);
+    if (![3, 5, 8].includes(Number(slots))) return json({ error: 'Invalid number of listens.' }, 400);
+    if (!['spotify', 'youtube'].includes(embed_type)) return json({ error: 'Invalid link type.' }, 400);
+    if (user.credits < slots) return json({ error: 'Not enough credits.' }, 400);
 
     const id = crypto.randomUUID();
     await env.DB.batch([
@@ -56,6 +56,6 @@ export async function onRequestPost({ request, env }) {
     return json({ id });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }

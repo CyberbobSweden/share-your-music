@@ -5,10 +5,11 @@ export async function onRequestGet({ request, env }) {
   try {
     const user = await requireAuth(request, env);
     delete user.password_hash;
+    delete user.verification_token;
     return json({ user });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }
 
@@ -22,6 +23,6 @@ export async function onRequestPut({ request, env }) {
     return json({ ok: true });
   } catch (e) {
     if (e instanceof AuthError) return json({ error: e.message }, e.status);
-    return json({ error: 'Serverfel.' }, 500);
+    return json({ error: 'Server error.' }, 500);
   }
 }

@@ -20,12 +20,12 @@ export async function getAuthUser(request, env) {
 
 export async function requireAuth(request, env) {
   const user = await getAuthUser(request, env);
-  if (!user) throw new AuthError('Inte inloggad.', 401);
+  if (!user) throw new AuthError('Not signed in.', 401);
   return user;
 }
 
 export async function requireAdmin(request, env) {
   const user = await requireAuth(request, env);
-  if (!user.is_admin) throw new AuthError('Kräver adminbehörighet.', 403);
+  if (!user.is_admin) throw new AuthError('Requires admin privileges.', 403);
   return user;
 }

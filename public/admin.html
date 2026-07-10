@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,33 +9,36 @@
 <link rel="stylesheet" href="/assets/style.css">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#ff4b3e">
+<style>
+  .amount-input{width:56px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:5px 6px;font-family:var(--mono);font-size:12px;border-radius:3px;text-align:center;}
+</style>
 </head>
 <body>
 <div class="shell">
   <div class="topbar">
     <div class="brand">
       <h1><span class="rec-dot"></span>Share Your Music</h1>
-      <div class="nav-links" style="margin-top:6px;"><a href="/app.html">← Tillbaka till appen</a></div>
+      <div class="nav-links" style="margin-top:6px;"><a href="/app.html">← Back to app</a></div>
     </div>
     <div class="user-panel">
       <div>
         <div class="user-name" id="userNameDisplay"></div>
-        <button class="switch-link" onclick="logout()">logga ut</button>
+        <button class="switch-link" onclick="logout()">sign out</button>
       </div>
     </div>
   </div>
 
   <div class="panel" style="margin-top:24px;">
-    <h3 class="section-title">🛡️ Adminpanel</h3>
-    <p class="section-sub">Justera poäng, spärra eller återaktivera användare.</p>
+    <h3 class="section-title">🛡️ Admin panel</h3>
+    <p class="section-sub">Adjust credits, ban or reinstate users.</p>
 
     <div class="stats-grid" id="statsGrid" style="margin-bottom:20px;">
-      <div class="stat-card"><div class="stat-label">Användare</div><div class="stat-value" id="sUsers">—</div></div>
-      <div class="stat-card"><div class="stat-label">Avstängda</div><div class="stat-value red" id="sBanned">—</div></div>
-      <div class="stat-card"><div class="stat-label">Adminar</div><div class="stat-value gold" id="sAdmins">—</div></div>
+      <div class="stat-card"><div class="stat-label">Users</div><div class="stat-value" id="sUsers">—</div></div>
+      <div class="stat-card"><div class="stat-label">Banned</div><div class="stat-value red" id="sBanned">—</div></div>
+      <div class="stat-card"><div class="stat-label">Admins</div><div class="stat-value gold" id="sAdmins">—</div></div>
     </div>
 
-    <div class="field"><input type="text" id="userSearch" placeholder="Sök användare..." oninput="renderUsers()"></div>
+    <div class="field"><input type="text" id="userSearch" placeholder="Search users..." oninput="renderUsers()"></div>
     <div id="adminList"></div>
   </div>
 </div>
@@ -60,7 +63,7 @@ async function init(){
 async function loadUsers(){
   const res = await apiFetch('/admin/users');
   if(!res || !res.ok){
-    document.getElementById('adminList').innerHTML = '<div class="empty-state">Kunde inte hämta användare. Är du inloggad som admin?</div>';
+    document.getElementById('adminList').innerHTML = '<div class="empty-state">Could not load users. Are you signed in as an admin?</div>';
     return;
   }
   allUsers = res.data.users || [];
@@ -77,7 +80,7 @@ function renderUsers(){
     .filter(u => !q || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
     .sort((a,b)=>a.username.localeCompare(b.username));
 
-  if(list.length===0){ wrap.innerHTML = '<div class="empty-state">Inga användare matchar sökningen.</div>'; return; }
+  if(list.length===0){ wrap.innerHTML = '<div class="empty-state">No users match your search.</div>'; return; }
 
   wrap.innerHTML = '';
   list.forEach(u=>{
@@ -88,16 +91,18 @@ function renderUsers(){
       <div class="admin-name">
         ${escapeHtml(u.username)} <span class="hint">${escapeHtml(u.email)}</span>
         ${u.is_admin?'<span class="label"> (admin)</span>':''}
-        ${u.is_banned?'<span class="banned-tag">Avstängd</span>':''}
+        ${u.is_banned?'<span class="banned-tag">Banned</span>':''}
         <div class="badge ${t.level}" style="margin-top:4px;"><i></i>${t.label}</div>
       </div>
       <div class="admin-credit-ctrl">
         <button class="mini-btn" onclick="adjustCredits('${u.id}',-1)">−</button>
         <span class="credit-num" style="font-size:14px;">${u.credits}</span>
         <button class="mini-btn" onclick="adjustCredits('${u.id}',1)">+</button>
+        <input type="number" class="amount-input" id="amt_${u.id}" placeholder="±n">
+        <button class="rate-btn" onclick="applyCustomAmount('${u.id}')">Apply</button>
       </div>
       <button class="ban-btn ${u.is_banned?'is-banned':''}" ${u.is_admin?'disabled':''} onclick="toggleBan('${u.id}')">
-        ${u.is_banned ? 'Återaktivera' : 'Spärra'}
+        ${u.is_banned ? 'Reinstate' : 'Ban'}
       </button>
     `;
     wrap.appendChild(row);
@@ -106,12 +111,18 @@ function renderUsers(){
 
 async function adjustCredits(userId, delta){
   const res = await apiFetch(`/admin/users/${userId}/credits`, { method:'POST', body: JSON.stringify({ delta }) });
-  if(!res || !res.ok){ alert(res?.data?.error || 'Något gick fel.'); return; }
+  if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
   await loadUsers();
+}
+async function applyCustomAmount(userId){
+  const input = document.getElementById('amt_'+userId);
+  const val = parseInt(input.value, 10);
+  if(!val || isNaN(val)){ input.style.borderColor = 'var(--accent)'; return; }
+  await adjustCredits(userId, val);
 }
 async function toggleBan(userId){
   const res = await apiFetch(`/admin/users/${userId}/ban`, { method:'POST' });
-  if(!res || !res.ok){ alert(res?.data?.error || 'Något gick fel.'); return; }
+  if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
   await loadUsers();
 }
 

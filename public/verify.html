@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Share Your Music — Verify Email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="label"><span class="rec-dot"></span>Share Your Music</div>
+      <h1 id="title">Verifying...</h1>
+      <p class="section-sub" id="message">One moment.</p>
+      <a href="/app.html"><button class="btn full">Go to the app</button></a>
+    </div>
+  </div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const titleEl = document.getElementById('title');
+      const msgEl = document.getElementById('message');
+
+      if (!token) {
+        titleEl.textContent = 'Missing token';
+        msgEl.textContent = 'This link is incomplete. Check the email again or resend verification from the app.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          titleEl.textContent = data.alreadyVerified ? 'Already verified' : 'Email verified 🎉';
+          msgEl.textContent = 'You are all set. Head back to the app.';
+        } else {
+          titleEl.textContent = 'Could not verify';
+          msgEl.textContent = data.error || 'This link may have expired or already been used.';
+        }
+      } catch (e) {
+        titleEl.textContent = 'Network error';
+        msgEl.textContent = 'Check your connection and try again.';
+      }
+    })();
+  </script>
+</body>
+</html>
