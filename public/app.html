@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/style.css">
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#ff4b3e">
+<meta name="theme-color" content="#E8462A">
 <link rel="apple-touch-icon" href="/icon.svg">
 </head>
 <body>
@@ -524,8 +524,8 @@ async function drawWorldMap(counts){
     if(!numeric) return;
     const el = svg.querySelector('#c'+numeric);
     if(!el) return;
-    const intensity = 0.35 + (count/max)*0.65;
-    el.style.fill = `color-mix(in srgb, var(--gold) ${Math.round(intensity*100)}%, var(--panel-2))`;
+    const intensity = 0.3 + (count/max)*0.7;
+    el.style.fill = `color-mix(in srgb, var(--accent) ${Math.round(intensity*100)}%, var(--panel))`;
     el.setAttribute('data-count', count);
     const name = (COUNTRIES.find(c=>c[0]===code)||[code,code])[1];
     const title = document.createElementNS('http://www.w3.org/2000/svg','title');
