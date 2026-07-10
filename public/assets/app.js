@@ -86,7 +86,15 @@ function badgeHtml(p) {
   return `<span class="badge ${t.level}"><i></i>${t.label}</span>`;
 }
 
-// ---- PWA service worker registration ----
+// Bump this on every meaningful change and mention the new number in chat —
+// it's the easiest way to visually confirm a deploy actually went live.
+const APP_VERSION = 'v1.1.0 · 2026-07-10';
+
+function renderVersionFooter(){
+  const el = document.getElementById('versionFooter');
+  if(el) el.textContent = APP_VERSION;
+}
+document.addEventListener('DOMContentLoaded', renderVersionFooter);
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
