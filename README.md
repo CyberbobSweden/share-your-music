@@ -230,3 +230,33 @@ tillbaka till en 30-sekunders förhandslyssning om man inte är inloggad i
 Spotify i samma webbläsare. Går tyvärr inte att upptäcka programmatiskt om
 någon är inloggad (cross-origin, ingen åtkomst till Spotifys iframe), så
 mer än en tydlig text går inte att göra där.
+
+---
+
+## v2.4.0 — riktiga app-ikoner + illustration
+
+Bilden du skickade (glansig lila 3D-stil) hade krockat rejält med paletten vi
+redan valde, så jag ritade en egen ikonuppsättning i "mixtape"-stilen
+istället — en kassettbandssilhuett i tape-red/teal/kräm, samma DNA som
+resten av sajten.
+
+**Nytt:**
+- `public/favicon.ico` + `public/assets/icon-16/32/180/192/512.png` +
+  en maskable-variant (`icon-512-maskable.png`) för Android adaptive icons
+- `public/assets/hero.png` — illustration på inloggningssidan, syns bredvid
+  formuläret på skärmar bredare än ~860px (döljs på mobil för att spara plats)
+- `manifest.json` pekar nu på riktiga PNG-ikoner i flera storlekar istället
+  för bara en SVG — det var faktiskt en brist innan: iOS stödjer inte
+  SVG-ikoner för "Lägg till på hemskärmen", så installation kan ha sett
+  trasig ut på iPhone tidigare utan att synas som ett fel.
+- Gamla `icon.svg` borttagen (ersatt).
+
+**Installation, testa så här:**
+- **Android/Chrome:** adressfältet visar en "installera app"-ikon, eller
+  meny → "Lägg till på startskärmen"
+- **iPhone/Safari:** dela-ikonen → "Lägg till på hemskärmen"
+- **Dator (Chrome/Edge):** ikon i adressfältets högra kant, eller meny →
+  "Installera Share Your Music..."
+
+Ingen databasändring. Service worker-cachen är versionsbumpad
+(`share-your-music-v2`) så gamla cachade filer rensas automatiskt.

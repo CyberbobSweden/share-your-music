@@ -1,6 +1,10 @@
-const CACHE_NAME = 'share-your-music-v1';
+const CACHE_NAME = 'share-your-music-v2';
 const OFFLINE_URL = '/offline.html';
-const PRECACHE = ['/offline.html', '/assets/style.css', '/assets/app.js', '/manifest.json', '/icon.svg', '/assets/world.svg'];
+const PRECACHE = [
+  '/offline.html', '/assets/style.css', '/assets/app.js', '/manifest.json',
+  '/favicon.ico', '/assets/icon-16.png', '/assets/icon-32.png', '/assets/icon-180.png',
+  '/assets/icon-192.png', '/assets/icon-512.png', '/assets/hero.png', '/assets/world.svg'
+];
 
 const API_PREFIXES = ['/auth/', '/tracks', '/feedback', '/profile', '/community', '/admin'];
 
