@@ -40,7 +40,9 @@ export async function onRequestPost({ request, env }) {
     if (!title || !trackUrl || !embed_type || !embed_id || !genre || !slots) {
       return json({ error: 'All fields are required.' }, 400);
     }
-    if (![3, 5, 8].includes(Number(slots))) return json({ error: 'Invalid number of listens.' }, 400);
+    if (!Number.isInteger(Number(slots)) || Number(slots) < 1 || Number(slots) > 200) {
+      return json({ error: 'Choose between 1 and 200 listens.' }, 400);
+    }
     if (!['spotify', 'youtube'].includes(embed_type)) return json({ error: 'Invalid link type.' }, 400);
     if (user.credits < slots) return json({ error: 'Not enough credits.' }, 400);
 

@@ -95,3 +95,29 @@ Vad som *inte* är på plats än, om du vill härda vidare: hastighetsbegränsni
 inloggningsförsök (skydd mot brute-force-gissning), lösenordsåterställning via
 mejl, och tvåfaktorsinloggning. Inget av det är svårt att lägga till senare, men
 det är rimligt att vänta med tills ni har fler användare.
+
+---
+
+## Senaste ändringarna (uppladdning, karta, GUI)
+
+- **Antal lyssningar vid uppladdning** är nu ett fritt sifferfält istället för en
+  fast 3/5/8-lista, begränsat av hur många credits du faktiskt har (max 200 som
+  absolut tak). Poängen du får för att *ge* feedback är alltid +1 (+1 bonus vid
+  Trusted/Expert-rykte) — det är helt separat från hur många lyssningar en
+  uppladdad låt begär.
+- **"X/Y lyssningar"** på en låt betyder: Y är hur många recensioner ägaren bad
+  om (och betalade credits för), X är hur många som kommit in hittills. En
+  förklaringsruta ("ⓘ How credits work") finns nu direkt på Lyssna- och
+  Upload-flikarna.
+- **Kartan är nu en riktig visuell världskarta** (stiliserade kontinentformer +
+  prickar per land, storlek baserad på antal medlemmar), inte bara en lista.
+  Listan finns kvar under kartan för detaljer.
+- Redan på plats sen tidigare, ingen ändring behövdes: man kan inte lyssna på
+  sin egen låt (filtreras bort ur kön på servern), och man kan bara recensera
+  varje låt en gång (databasens UNIQUE-constraint stoppar det även om någon
+  skulle försöka kringgå gränssnittet).
+- **Var lagras låtarna?** Ingen ljudfil lagras hos oss någonsin — bara titel,
+  genre och länken/embed-ID:t till Spotify/YouTube. Själva uppspelningen sker i
+  deras spelare. Det som faktiskt ligger i databasen (D1) är kontouppgifter,
+  låt-metadata och skriven feedback — se säkerhetsavsnittet ovan för hur det
+  skyddas.

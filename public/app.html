@@ -15,7 +15,7 @@
 <div class="shell">
   <div class="topbar">
     <div class="brand">
-      <h1><span class="rec-dot"></span>Share Your Music</h1>
+      <h1><span class="eq-icon"><i></i><i></i><i></i><i></i></span>Share Your Music</h1>
       <div class="nav-links" style="margin-top:6px;">
         <a href="/admin.html" id="adminLink" style="display:none;">Admin</a>
       </div>
@@ -51,6 +51,14 @@
       <div class="chips" id="genreChips"></div>
       <div id="queueList"></div>
     </div>
+    <div class="panel">
+      <button class="switch-link" style="font-size:11px;" onclick="toggleInfoBox('howListen')">ⓘ How credits work</button>
+      <div id="howListen" style="display:none;margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;">
+        Giving feedback earns you <strong>+1 credit</strong> (+1 bonus once you're a Trusted or Expert reviewer).
+        Spend credits to get your own track heard: the number next to each track (e.g. "2/5") is how many
+        of the listens its owner asked for have come in so far — once it hits the target, the track leaves the queue.
+      </div>
+    </div>
   </div>
 
   <div id="tab-upload" style="display:none;">
@@ -62,14 +70,12 @@
       <div class="field"><label>Link (Spotify or YouTube)</label><input type="text" id="upUrl" placeholder="https://open.spotify.com/track/... or https://youtu.be/..."></div>
       <div class="row2">
         <div class="field"><label>Genre</label><select id="upGenre"></select></div>
-        <div class="field"><label>Number of listens</label>
-          <select id="upSlots">
-            <option value="3">3 listens — 3 credits</option>
-            <option value="5">5 listens — 5 credits</option>
-            <option value="8">8 listens — 8 credits</option>
-          </select>
+        <div class="field"><label>Number of listens <span class="hint" id="slotsMax"></span></label>
+          <input type="number" id="upSlots" min="1" value="3">
         </div>
       </div>
+      <p class="hint">Each listen you request costs 1 credit — you have <strong id="upCreditsNote">0</strong> to spend.
+        Reviewers keep working through your track until this many people have given feedback.</p>
       <button class="btn full" onclick="submitTrack()">Submit track</button>
     </div>
   </div>
@@ -91,7 +97,8 @@
     <div class="panel">
       <h3 class="section-title">🌍 Where in the world?</h3>
       <p class="section-sub">Only members who opted in on their Profile page show up here, by country only — never an exact location.</p>
-      <div id="countryList"></div>
+      <div class="map-wrap" id="worldMap"></div>
+      <div id="countryList" style="margin-top:14px;"></div>
     </div>
   </div>
 
@@ -146,6 +153,19 @@ const COUNTRIES = [
   ['AE','United Arab Emirates'],['TR','Turkey'],['RU','Russia']
 ];
 
+// Approximate positions on a 1000x500 equirectangular-style canvas (x: longitude, y: latitude)
+const COUNTRY_COORDS = {
+  SE:[542,78], NO:[524,81], DK:[528,94], FI:[572,72], IS:[447,69],
+  DE:[528,108], FR:[506,122], GB:[494,100], IE:[478,103], NL:[514,106],
+  BE:[513,109], ES:[490,139], PT:[478,140], IT:[535,132], PL:[553,106],
+  AT:[540,118], CH:[522,119], GR:[561,142], CZ:[543,111], HU:[554,119],
+  EE:[572,86], LV:[569,92], LT:[567,97], UA:[589,114], RO:[569,122],
+  US:[228,142], CA:[206,94], MX:[217,186], BR:[347,278], AR:[322,344],
+  AU:[875,319], NZ:[983,364], JP:[883,150], KR:[854,147], CN:[786,153],
+  IN:[717,194], ZA:[567,333], NG:[522,225], KE:[603,247], EG:[583,175],
+  AE:[650,183], TR:[597,142], RU:[750,83]
+};
+
 const auth = requireAuthOrRedirect();
 let profile = null;
 let selectedGenres = new Set();
@@ -195,6 +215,21 @@ function renderAll(){
   renderMeter();
   renderReputation();
   renderQueue();
+  updateSlotsMax();
+}
+
+function toggleInfoBox(id){
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateSlotsMax(){
+  const max = Math.max(1, profile.credits);
+  const input = document.getElementById('upSlots');
+  input.max = max;
+  if(parseInt(input.value,10) > max) input.value = max;
+  document.getElementById('slotsMax').textContent = `(you have ${profile.credits} credit${profile.credits===1?'':'s'})`;
+  document.getElementById('upCreditsNote').textContent = profile.credits;
 }
 
 function renderMeter(){
@@ -255,7 +290,7 @@ async function renderQueue(){
   const res = await apiFetch('/tracks?genres=' + encodeURIComponent(Array.from(selectedGenres).join(',')));
   if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load the queue.</div>'; return; }
   const q = res.data.tracks || [];
-  if(q.length===0){ wrap.innerHTML = '<div class="empty-state">No tracks waiting right now in your selected genres.</div>'; return; }
+  if(q.length===0){ wrap.innerHTML = '<div class="empty-state">🎵 No tracks waiting in your selected genres right now — try more genres, or check back soon.</div>'; return; }
 
   wrap.innerHTML='';
   q.forEach((t,i)=>{
@@ -335,7 +370,7 @@ async function renderMyTracks(){
   const res = await apiFetch('/tracks/mine');
   if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load your tracks.</div>'; return; }
   const mine = res.data.tracks || [];
-  if(mine.length===0){ wrap.innerHTML = '<div class="empty-state">You have not submitted a track yet.</div>'; return; }
+  if(mine.length===0){ wrap.innerHTML = '<div class="empty-state">🎤 You have not submitted a track yet — head to Upload to get some ears on your music.</div>'; return; }
 
   wrap.innerHTML='';
   for(const t of mine){
@@ -426,8 +461,11 @@ async function renderCommunity(){
   const counts = {};
   members.forEach(m=>{ if(m.country) counts[m.country] = (counts[m.country]||0)+1; });
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+
+  drawWorldMap(counts);
+
   if(entries.length===0){
-    countryWrap.innerHTML = '<div class="empty-state">No one has opted into the map yet. Turn it on in your Profile.</div>';
+    countryWrap.innerHTML = '<div class="empty-state">🌍 No one has opted into the map yet — be the first, in your Profile.</div>';
   } else {
     const max = entries[0][1];
     countryWrap.innerHTML = entries.map(([code,count])=>{
@@ -439,6 +477,38 @@ async function renderCommunity(){
       </div>`;
     }).join('');
   }
+}
+
+function drawWorldMap(counts){
+  const wrap = document.getElementById('worldMap');
+  const entries = Object.entries(counts).filter(([code]) => COUNTRY_COORDS[code]);
+  const max = entries.length ? Math.max(...entries.map(e=>e[1])) : 1;
+
+  // Stylized, abstract continent silhouettes — not precise coastlines, just enough
+  // shape to read as "a world map" and give the dots geographic context.
+  const continents = `
+    <path d="M120,70 Q180,50 260,65 Q320,80 300,140 Q290,190 240,220 Q190,235 150,200 Q110,160 100,110 Q100,85 120,70 Z" class="continent"/>
+    <path d="M280,230 Q320,220 350,250 Q380,300 360,360 Q340,400 305,390 Q280,370 275,320 Q270,270 280,230 Z" class="continent"/>
+    <path d="M470,95 Q520,85 560,100 Q580,115 565,135 Q540,150 505,145 Q475,135 465,115 Q465,102 470,95 Z" class="continent"/>
+    <path d="M475,150 Q540,145 585,175 Q605,220 590,280 Q575,335 545,350 Q510,360 490,320 Q470,270 468,215 Q467,180 475,150 Z" class="continent"/>
+    <path d="M610,80 Q700,60 800,80 Q880,105 900,150 Q895,190 850,200 Q780,205 720,190 Q650,175 615,140 Q600,110 610,80 Z" class="continent"/>
+    <path d="M840,290 Q890,280 920,305 Q930,330 905,345 Q870,350 845,330 Q835,310 840,290 Z" class="continent"/>
+  `;
+
+  const dots = entries.map(([code,count])=>{
+    const [x,y] = COUNTRY_COORDS[code];
+    const r = 5 + (count/max)*10;
+    const name = (COUNTRIES.find(c=>c[0]===code)||[code,code])[1];
+    return `<circle cx="${x}" cy="${y}" r="${r}" class="map-dot"><title>${name}: ${count}</title></circle>
+            <circle cx="${x}" cy="${y}" r="${r}" class="map-dot-ring"/>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 1000 460" style="width:100%;height:auto;display:block;">
+      ${continents}
+      ${dots}
+    </svg>
+  `;
 }
 
 function renderProfileForm(){
