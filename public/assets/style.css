@@ -134,10 +134,11 @@ select{width:100%;background:var(--panel-2);border:1px solid var(--line);color:v
 .member-card:hover{transform:translateY(-2px);border-color:var(--gold);}
 .btn{transition:transform 0.1s ease;}
 .btn:not(:disabled):active{transform:scale(0.97);}
-.map-wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:12px;}
-.continent{fill:var(--line);}
-.map-dot{fill:var(--gold);opacity:0.9;}
-.map-dot-ring{fill:none;stroke:var(--accent);stroke-width:1;opacity:0.5;}
+.map-wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:12px;overflow:hidden;}
+.map-wrap svg{width:100%;height:auto;display:block;}
+.country{fill:var(--line);stroke:var(--bg);stroke-width:0.4;transition:fill 0.3s ease;}
+.country[data-count]{cursor:pointer;}
+.country[data-count]:hover{stroke:var(--gold);stroke-width:1;}
 .admin-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;background:var(--panel-2);flex-wrap:wrap;}
 .admin-name{flex:1;min-width:120px;font-size:12.5px;}
 .admin-credit-ctrl{display:flex;align-items:center;gap:6px;}

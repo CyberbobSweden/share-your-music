@@ -169,18 +169,20 @@ const COUNTRIES = [
   ['AE','United Arab Emirates'],['TR','Turkey'],['RU','Russia']
 ];
 
-// Approximate positions on a 1000x500 equirectangular-style canvas (x: longitude, y: latitude)
-const COUNTRY_COORDS = {
-  SE:[542,78], NO:[524,81], DK:[528,94], FI:[572,72], IS:[447,69],
-  DE:[528,108], FR:[506,122], GB:[494,100], IE:[478,103], NL:[514,106],
-  BE:[513,109], ES:[490,139], PT:[478,140], IT:[535,132], PL:[553,106],
-  AT:[540,118], CH:[522,119], GR:[561,142], CZ:[543,111], HU:[554,119],
-  EE:[572,86], LV:[569,92], LT:[567,97], UA:[589,114], RO:[569,122],
-  US:[228,142], CA:[206,94], MX:[217,186], BR:[347,278], AR:[322,344],
-  AU:[875,319], NZ:[983,364], JP:[883,150], KR:[854,147], CN:[786,153],
-  IN:[717,194], ZA:[567,333], NG:[522,225], KE:[603,247], EG:[583,175],
-  AE:[650,183], TR:[597,142], RU:[750,83]
+// Maps our ISO alpha-2 country codes to the ISO 3166-1 numeric IDs used by
+// world.svg's country paths (id="c840" etc — standard, not proprietary data).
+const COUNTRY_ISO_NUMERIC = {
+  SE:'752', NO:'578', DK:'208', FI:'246', IS:'352',
+  DE:'276', FR:'250', GB:'826', IE:'372', NL:'528',
+  BE:'056', ES:'724', PT:'620', IT:'380', PL:'616',
+  AT:'040', CH:'756', GR:'300', CZ:'203', HU:'348',
+  EE:'233', LV:'428', LT:'440', UA:'804', RO:'642',
+  US:'840', CA:'124', MX:'484', BR:'076', AR:'032',
+  AU:'036', NZ:'554', JP:'392', KR:'410', CN:'156',
+  IN:'356', ZA:'710', NG:'566', KE:'404', EG:'818',
+  AE:'784', TR:'792', RU:'643'
 };
+let worldSvgLoaded = false;
 
 const auth = requireAuthOrRedirect();
 let profile = null;
@@ -479,7 +481,7 @@ async function renderCommunity(){
   members.forEach(m=>{ if(m.country) counts[m.country] = (counts[m.country]||0)+1; });
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
 
-  drawWorldMap(counts);
+  await drawWorldMap(counts);
 
   if(entries.length===0){
     countryWrap.innerHTML = '<div class="empty-state">🌍 No one has opted into the map yet — be the first, in your Profile.</div>';
@@ -496,36 +498,40 @@ async function renderCommunity(){
   }
 }
 
-function drawWorldMap(counts){
+async function drawWorldMap(counts){
   const wrap = document.getElementById('worldMap');
-  const entries = Object.entries(counts).filter(([code]) => COUNTRY_COORDS[code]);
-  const max = entries.length ? Math.max(...entries.map(e=>e[1])) : 1;
 
-  // Stylized, abstract continent silhouettes — not precise coastlines, just enough
-  // shape to read as "a world map" and give the dots geographic context.
-  const continents = `
-    <path d="M120,70 Q180,50 260,65 Q320,80 300,140 Q290,190 240,220 Q190,235 150,200 Q110,160 100,110 Q100,85 120,70 Z" class="continent"/>
-    <path d="M280,230 Q320,220 350,250 Q380,300 360,360 Q340,400 305,390 Q280,370 275,320 Q270,270 280,230 Z" class="continent"/>
-    <path d="M470,95 Q520,85 560,100 Q580,115 565,135 Q540,150 505,145 Q475,135 465,115 Q465,102 470,95 Z" class="continent"/>
-    <path d="M475,150 Q540,145 585,175 Q605,220 590,280 Q575,335 545,350 Q510,360 490,320 Q470,270 468,215 Q467,180 475,150 Z" class="continent"/>
-    <path d="M610,80 Q700,60 800,80 Q880,105 900,150 Q895,190 850,200 Q780,205 720,190 Q650,175 615,140 Q600,110 610,80 Z" class="continent"/>
-    <path d="M840,290 Q890,280 920,305 Q930,330 905,345 Q870,350 845,330 Q835,310 840,290 Z" class="continent"/>
-  `;
+  if(!worldSvgLoaded){
+    try{
+      const res = await fetch('/assets/world.svg');
+      wrap.innerHTML = await res.text();
+      worldSvgLoaded = true;
+    }catch(e){
+      wrap.innerHTML = '<div class="empty-state">Could not load the map.</div>';
+      return;
+    }
+  }
 
-  const dots = entries.map(([code,count])=>{
-    const [x,y] = COUNTRY_COORDS[code];
-    const r = 5 + (count/max)*10;
+  const svg = wrap.querySelector('svg');
+  if(!svg) return;
+  svg.querySelectorAll('.country').forEach(p => { p.style.fill = ''; p.removeAttribute('data-count'); });
+
+  const values = Object.values(counts);
+  const max = values.length ? Math.max(...values) : 1;
+
+  Object.entries(counts).forEach(([code,count])=>{
+    const numeric = COUNTRY_ISO_NUMERIC[code];
+    if(!numeric) return;
+    const el = svg.querySelector('#c'+numeric);
+    if(!el) return;
+    const intensity = 0.35 + (count/max)*0.65;
+    el.style.fill = `color-mix(in srgb, var(--gold) ${Math.round(intensity*100)}%, var(--panel-2))`;
+    el.setAttribute('data-count', count);
     const name = (COUNTRIES.find(c=>c[0]===code)||[code,code])[1];
-    return `<circle cx="${x}" cy="${y}" r="${r}" class="map-dot"><title>${name}: ${count}</title></circle>
-            <circle cx="${x}" cy="${y}" r="${r}" class="map-dot-ring"/>`;
-  }).join('');
-
-  wrap.innerHTML = `
-    <svg viewBox="0 0 1000 460" style="width:100%;height:auto;display:block;">
-      ${continents}
-      ${dots}
-    </svg>
-  `;
+    const title = document.createElementNS('http://www.w3.org/2000/svg','title');
+    title.textContent = `${name}: ${count}`;
+    el.appendChild(title);
+  });
 }
 
 function renderProfileForm(){
