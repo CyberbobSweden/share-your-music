@@ -260,3 +260,26 @@ resten av sajten.
 
 Ingen databasändring. Service worker-cachen är versionsbumpad
 (`share-your-music-v2`) så gamla cachade filer rensas automatiskt.
+
+---
+
+## v2.5.0 — Om-sida
+
+Ny sida: `public/about.html`, länkad från appens header ("About") och från
+inloggningssidan ("Why this exists →"). Förklarar varför sajten finns,
+hur poängsystemet håller det ärligt, och — det du efterfrågade — varför
+man delar Spotify/YouTube-länkar istället för att ladda upp MP3/WAV-filer:
+kort sagt att vi medvetet aldrig vill lagra eller ansvara för andras
+ljudfiler, bara länken, titeln, genren och feedbacken.
+
+Ingen databasändring. Version: **v2.5.0**.
+
+---
+
+## v2.6.0 — Google Search Console-verifiering
+
+Verifieringsmetataggen ligger nu i `<head>` på alla sidor (index, app, admin,
+about, verify, offline), med en kommentar som varnar för att den inte får
+tas bort — tas den bort återtar Google verifieringen av sajten.
+
+Ingen databasändring.

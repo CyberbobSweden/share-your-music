@@ -88,7 +88,7 @@ function badgeHtml(p) {
 
 // Bump this on every meaningful change and mention the new number in chat —
 // it's the easiest way to visually confirm a deploy actually went live.
-const APP_VERSION = 'v2.5.0 · 2026-07-10';
+const APP_VERSION = 'v2.6.0 · 2026-07-10';
 
 function renderVersionFooter(){
   const el = document.getElementById('versionFooter');
