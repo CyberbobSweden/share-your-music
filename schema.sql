@@ -32,6 +32,7 @@ CREATE TABLE tracks (
   genre TEXT NOT NULL,
   slots_target INTEGER NOT NULL,
   feedback_count INTEGER NOT NULL DEFAULT 0,
+  is_featured INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

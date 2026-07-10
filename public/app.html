@@ -148,8 +148,9 @@
     <div class="label" id="sheetGenre"></div>
     <h2 id="sheetTitle" style="margin:6px 0 2px;font-size:19px;"></h2>
     <div class="embed-wrap" id="sheetEmbed"></div>
-    <div class="embed-note">Full-length playback may require you to be signed in with Spotify/YouTube.</div>
+    <div class="embed-note" id="sheetEmbedNote"></div>
     <div style="margin-top:20px;">
+      <p class="rate-guidance" style="margin-bottom:10px;">🎧 Listen to the whole track before you write — feedback on the first 20 seconds rarely lands. <strong>Be kind, always:</strong> if something isn't working, say so, but say it like you'd want to hear it about your own track.</p>
       <label class="label">Your feedback (required)</label>
       <textarea id="fbText" placeholder="What works? What would you change? Be specific..." oninput="updateCounter()"></textarea>
       <div class="counter-row"><span id="charCount">0 / 100 characters</span><span id="wordCount">0 / 15 words</span></div>
@@ -343,6 +344,9 @@ function openSheet(t){
   embedWrap.innerHTML = t.embed_type==='spotify'
     ? `<iframe src="https://open.spotify.com/embed/track/${t.embed_id}" width="100%" height="152" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
     : `<iframe src="https://www.youtube.com/embed/${t.embed_id}" width="100%" height="260" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+  document.getElementById('sheetEmbedNote').textContent = t.embed_type==='spotify'
+    ? 'Spotify: log into Spotify in this browser to hear the full track — otherwise you may only get a 30-second preview.'
+    : 'YouTube: plays in full right away, no account needed.';
   document.getElementById('fbText').value = '';
   updateCounter();
   document.getElementById('overlay').classList.add('open');

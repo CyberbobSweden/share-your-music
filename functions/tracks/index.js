@@ -15,15 +15,16 @@ export async function onRequestGet({ request, env }) {
          AND t.genre IN (${placeholders})
          AND t.feedback_count < t.slots_target
          AND t.id NOT IN (SELECT track_id FROM feedback WHERE listener_id = ?)
-       ORDER BY t.feedback_count ASC
+       ORDER BY t.is_featured DESC, t.feedback_count ASC
        LIMIT 40`
     ).bind(user.id, ...genres, user.id).all();
 
-    // Liten slumpvis omblandning i minnet — SQLite RANDOM() i ORDER BY
-    // works poorly together with the feedback_count sort, so we do it here instead.
+    // Small in-memory shuffle within each priority tier — admin-featured tracks
+    // always stay on top, everything else is ordered by fewest reviews first
+    // (so nothing waits forever) with a random tiebreak.
     const shuffled = results
       .map(t => ({ t, r: Math.random() }))
-      .sort((a, b) => (a.t.feedback_count - b.t.feedback_count) || (a.r - b.r))
+      .sort((a, b) => (b.t.is_featured - a.t.is_featured) || (a.t.feedback_count - b.t.feedback_count) || (a.r - b.r))
       .map(x => x.t);
 
     return json({ tracks: shuffled });

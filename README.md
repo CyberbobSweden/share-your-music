@@ -139,3 +139,94 @@ det är rimligt att vänta med tills ni har fler användare.
   ```
 
 Version efter den här ändringen: **v1.2.0**.
+
+---
+
+## Nytt: riktig världskarta (v1.3.0)
+
+De handritade "kontinent-blobbarna" är utbytta mot en faktisk karta —
+genererad från öppna, allmänna gränsdata (Natural Earth-baserad, via npm-
+paketet `world-atlas`, samma typ av källa riktiga kartverktyg bygger på).
+Filen ligger som `public/assets/world.svg` (~130 KB, en `<path>` per land,
+identifierad med landets ISO 3166-1-nummer).
+
+Länder färgas nu efter hur många medlemmar som valt att synas där — mörkare
+guld ju fler, grå/neutral om ingen. Hovra över ett land för en liten tooltip
+med namn och antal.
+
+Ingen databasändring krävs för det här — bara push och deploy som vanligt.
+
+---
+
+## v2.0.0 — nytt utseende: "mixtape"
+
+Hela paletten är utbytt. Gamla temat (nästan svart botten + orange/guld) låg
+farligt nära två av de vanligaste AI-genererade defaultlooken — inte en
+medveten stil, bara ett mönster. Nytt tema är byggt kring själva idén med att
+dela musik med varandra: en varm papperston som en kassettbandsficka,
+kassettbandsröd + kaklad-teal som accentfärger, och en liten snedställd
+"washi tape"-remsa i hörnet på varje kort — som om det klistrats fast för
+hand. Rundare hörn rakt igenom, samma typsnitt som innan (Space Grotesk +
+IBM Plex Mono höll redan, det var färgerna som var problemet).
+
+Inga variabelnamn i CSS:en ändrades (bara värdena), så inget annat i koden
+behövde röras. Ingen databasändring, bara push och deploy.
+
+Version: **v2.0.0**.
+
+---
+
+## v2.1.0 — feedbackhistorik
+
+Ny sektion under **My Tracks**: "Feedback you have given" — en lista över
+varje recension du skrivit, med låttitel, genre, datum och om ägaren
+markerat den som hjälpsam. Ny endpoint `GET /feedback/mine`. Ingen
+databasändring krävs, bara push och deploy.
+
+## Om mejl inte skickas
+Om "Resend email" ger fel: kontrollera att testkontot du skickar till har
+samma adress som ditt Resend-konto registrerades med — sandboxavsändaren
+`onboarding@resend.dev` levererar bara dit. Verifiera en egen domän hos
+Resend för att kunna skicka till vem som helst.
+
+---
+
+## v2.2.0 — e-postverifiering avstängd tills vidare
+
+Registrering skickar inte längre något bekräftelsemejl, och appen visar
+ingen "verify your email"-banner. Inget blockerar registrering eller
+inloggning nu — precis som innan e-postbiten byggdes.
+
+**Allt är kvar i koden, bara avstängt.** Så här slår du på det igen den dag
+ni skaffar en egen domän och verifierar den hos Resend:
+1. `functions/auth/register.js` → sätt `EMAIL_VERIFICATION_ENABLED = true`
+2. `public/app.html` → i `init()`, ta bort kommentarstecknet framför `renderVerifyBanner();`
+3. Push och deploy
+
+Ingen databasändring krävs för av- eller påslag.
+
+---
+
+## v2.3.0 — vänlighetspåminnelse, könsprioritet, spelarklarhet
+
+**1) "Be kind, always"** — ny text ovanför feedback-fältet, alltid synlig
+(inte gömd bakom en info-knapp): påminnelse om att lyssna igenom hela låten
+innan man skriver, och att leverera kritik respektfullt.
+
+**2) Könsordning** — så funkar den: låtar med **färst mottagna recensioner
+hittills sorteras överst** (ingen ska behöva vänta för evigt bara för att en
+genre är populär), med slumpmässig blandning inom samma nivå. Admin kan nu
+**"Feature"** en låt i den nya **Queue**-sektionen på adminsidan — den
+låten hoppar då alltid överst i alla köer tills den avmarkeras. Går också
+att **Remove** en låt helt (moderation, t.ex. regelbrott).
+Kräver en databasmigration:
+```
+wrangler d1 execute share-your-music-db --remote --file=./migration_004_featured_tracks.sql
+```
+
+**3) Spelare utan konto** — texten under spelaren är nu specifik per
+plattform: YouTube spelar alltid hela låten utan konto, Spotify kan falla
+tillbaka till en 30-sekunders förhandslyssning om man inte är inloggad i
+Spotify i samma webbläsare. Går tyvärr inte att upptäcka programmatiskt om
+någon är inloggad (cross-origin, ingen åtkomst till Spotifys iframe), så
+mer än en tydlig text går inte att göra där.

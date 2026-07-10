@@ -43,6 +43,12 @@
   </div>
 
   <div class="panel" style="margin-top:16px;">
+    <h3 class="section-title">🎵 Queue</h3>
+    <p class="section-sub">Tracks waiting for feedback. Feature one to bump it to the front of everyone's queue, or remove one that breaks the rules.</p>
+    <div id="tracksList"></div>
+  </div>
+
+  <div class="panel" style="margin-top:16px;">
     <h3 class="section-title">💡 Suggestions</h3>
     <p class="section-sub">Sent in by members via the Suggest tab.</p>
     <div id="suggestionsList"></div>
@@ -66,6 +72,7 @@ async function init(){
   document.getElementById('userNameDisplay').textContent = profRes.data.user.username;
   await loadUsers();
   await loadSuggestions();
+  await loadTracks();
 }
 
 async function loadUsers(){
@@ -159,6 +166,35 @@ async function toggleSuggestion(id){
   const res = await apiFetch(`/admin/suggestions/${id}/resolve`, { method:'POST' });
   if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
   await loadSuggestions();
+}
+
+async function loadTracks(){
+  const wrap = document.getElementById('tracksList');
+  const res = await apiFetch('/admin/tracks');
+  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load tracks.</div>'; return; }
+  const list = res.data.tracks || [];
+  if(list.length===0){ wrap.innerHTML = '<div class="empty-state">No tracks yet.</div>'; return; }
+  wrap.innerHTML = list.map(t => `
+    <div class="admin-row">
+      <div class="admin-name">
+        ${t.is_featured ? '⭐ ' : ''}${escapeHtml(t.title)} <span class="hint">by ${escapeHtml(t.owner_name)}</span>
+        <div class="hint" style="margin-top:2px;">${t.genre} · ${t.embed_type} · ${t.feedback_count}/${t.slots_target} listens</div>
+      </div>
+      <button class="rate-btn" onclick="toggleFeature('${t.id}')">${t.is_featured ? 'Unfeature' : 'Feature'}</button>
+      <button class="ban-btn is-banned" onclick="removeTrack('${t.id}')">Remove</button>
+    </div>
+  `).join('');
+}
+async function toggleFeature(id){
+  const res = await apiFetch(`/admin/tracks/${id}/feature`, { method:'POST' });
+  if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
+  await loadTracks();
+}
+async function removeTrack(id){
+  if(!confirm('Remove this track for everyone? This cannot be undone.')) return;
+  const res = await apiFetch(`/admin/tracks/${id}/remove`, { method:'POST' });
+  if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
+  await loadTracks();
 }
 
 init();
