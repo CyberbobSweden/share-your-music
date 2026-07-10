@@ -87,6 +87,11 @@
       <div class="privacy-note">Feedback here is protected on the server — the API refuses to hand it to anyone but you (or an admin), no matter what the interface shows.</div>
       <div id="myTracksList"></div>
     </div>
+    <div class="panel">
+      <h3 class="section-title">Feedback you have given</h3>
+      <p class="section-sub">Every review you have written, saved here so you can find it again.</p>
+      <div id="myGivenFeedbackList"></div>
+    </div>
   </div>
 
   <div id="tab-community" style="display:none;">
@@ -222,7 +227,7 @@ function setTab(name){
     document.getElementById('tab-'+t).style.display = (t===name)?'block':'none';
     document.querySelector('.tab[data-tab="'+t+'"]').classList.toggle('active', t===name);
   });
-  if(name==='mine') renderMyTracks();
+  if(name==='mine'){ renderMyTracks(); renderMyGivenFeedback(); }
   if(name==='listen') renderQueue();
   if(name==='community') renderCommunity();
   if(name==='profile') renderProfileForm();
@@ -422,6 +427,27 @@ async function renderMyTracks(){
   }
 }
 function toggleMyTrack(id){ document.getElementById(id).classList.toggle('open'); }
+
+async function renderMyGivenFeedback(){
+  const wrap = document.getElementById('myGivenFeedbackList');
+  wrap.innerHTML = '<div class="empty-state">Loading...</div>';
+  const res = await apiFetch('/feedback/mine');
+  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load your feedback history.</div>'; return; }
+  const list = res.data.feedback || [];
+  if(list.length===0){ wrap.innerHTML = '<div class="empty-state">🎧 You have not reviewed a track yet — head to Listen to get started.</div>'; return; }
+  wrap.innerHTML = list.map(f => `
+    <div class="fb-item">
+      <div class="fb-meta">
+        <span>${escapeHtml(f.title)}</span>
+        <span class="hint">${f.genre} · ${f.embed_type}</span>
+        <span>${new Date(f.created_at).toLocaleDateString()}</span>
+        ${f.rated===1 ? '<span class="badge betrodd"><i></i>Marked helpful</span>' : ''}
+        ${f.rated===0 ? '<span class="badge omtvistad"><i></i>Marked not helpful</span>' : ''}
+      </div>
+      ${escapeHtml(f.text)}
+    </div>
+  `).join('');
+}
 
 function renderRatingControl(trackId, f){
   if(f.rated===1) return '<div class="rated-label">You marked this as "helpful".</div>';
