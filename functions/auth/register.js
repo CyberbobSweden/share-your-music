@@ -3,6 +3,11 @@ import { signJWT } from '../_lib/jwt.js';
 import { json } from '../_lib/response.js';
 import { sendEmail, verificationEmailHtml } from '../_lib/email.js';
 
+// Turned off until a verified sending domain is set up in Resend — see README
+// "Om mejl inte skickas". Flip this back to true (and re-add the banner call
+// in app.html's init()) once EMAIL_FROM points at a real domain.
+const EMAIL_VERIFICATION_ENABLED = false;
+
 export async function onRequestPost({ request, env }) {
   try {
     const { username, email, password } = await request.json().catch(() => ({}));
@@ -26,17 +31,19 @@ export async function onRequestPost({ request, env }) {
     delete user.password_hash;
     delete user.verification_token;
 
-    // Best-effort: registration succeeds even if the email fails to send.
-    try {
-      const origin = new URL(request.url).origin;
-      const verifyUrl = `${origin}/verify.html?token=${verificationToken}`;
-      await sendEmail({
-        to: normalizedEmail,
-        subject: 'Confirm your Share Your Music account',
-        html: verificationEmailHtml(username.trim(), verifyUrl)
-      }, env);
-    } catch (mailErr) {
-      console.error('Failed to send verification email', mailErr);
+    if (EMAIL_VERIFICATION_ENABLED) {
+      // Best-effort: registration succeeds even if the email fails to send.
+      try {
+        const origin = new URL(request.url).origin;
+        const verifyUrl = `${origin}/verify.html?token=${verificationToken}`;
+        await sendEmail({
+          to: normalizedEmail,
+          subject: 'Confirm your Share Your Music account',
+          html: verificationEmailHtml(username.trim(), verifyUrl)
+        }, env);
+      } catch (mailErr) {
+        console.error('Failed to send verification email', mailErr);
+      }
     }
 
     return json({ token, user });
