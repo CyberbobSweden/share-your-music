@@ -40,8 +40,9 @@
     <div class="tab active" data-tab="listen" onclick="setTab('listen')">Listen</div>
     <div class="tab" data-tab="upload" onclick="setTab('upload')">Upload</div>
     <div class="tab" data-tab="mine" onclick="setTab('mine')">My Tracks</div>
-    <div class="tab" data-tab="community" onclick="setTab('community')">Community &amp; Map</div>
+    <div class="tab" data-tab="community" onclick="setTab('community')">Community</div>
     <div class="tab" data-tab="profile" onclick="setTab('profile')">Profile</div>
+    <div class="tab" data-tab="suggest" onclick="setTab('suggest')">Suggest</div>
   </div>
 
   <div id="tab-listen">
@@ -117,6 +118,20 @@
       </div>
       <p class="hint">The map lives on the <strong>Community &amp; Map</strong> tab — turn this on and pick a country to appear there.</p>
       <button class="btn full" onclick="saveProfile()">Save</button>
+    </div>
+  </div>
+
+  <div id="tab-suggest" style="display:none;">
+    <div class="panel">
+      <h3 class="section-title">💡 Suggest an improvement</h3>
+      <p class="section-sub">Bugs, ideas, things that confused you — admins see every submission.</p>
+      <div class="alert" id="suggestBanner"></div>
+      <div class="field"><textarea id="suggestText" style="min-height:100px;" placeholder="What should we fix or add?"></textarea></div>
+      <button class="btn full" onclick="submitSuggestion()">Send to admins</button>
+    </div>
+    <div class="panel">
+      <h3 class="section-title">Your suggestions</h3>
+      <div id="mySuggestionsList"></div>
     </div>
   </div>
 <div style="text-align:center;padding:24px 0 0;"><span class="hint" id="versionFooter"></span></div>
@@ -201,7 +216,7 @@ async function resendVerification(){
 }
 
 function setTab(name){
-  ['listen','upload','mine','community','profile'].forEach(t=>{
+  ['listen','upload','mine','community','profile','suggest'].forEach(t=>{
     document.getElementById('tab-'+t).style.display = (t===name)?'block':'none';
     document.querySelector('.tab[data-tab="'+t+'"]').classList.toggle('active', t===name);
   });
@@ -209,6 +224,7 @@ function setTab(name){
   if(name==='listen') renderQueue();
   if(name==='community') renderCommunity();
   if(name==='profile') renderProfileForm();
+  if(name==='suggest') renderMySuggestions();
 }
 
 function renderAll(){
@@ -525,6 +541,35 @@ async function saveProfile(){
   if(!res || !res.ok){ showAlert('profileBanner', res?.data?.error || 'Something went wrong.', 'error'); return; }
   showAlert('profileBanner','Saved.','success');
   await init();
+}
+
+async function submitSuggestion(){
+  const text = document.getElementById('suggestText').value.trim();
+  hideAlert('suggestBanner');
+  if(text.length < 10){ showAlert('suggestBanner','Tell us a bit more — at least 10 characters.'); return; }
+  const res = await apiFetch('/suggestions', { method:'POST', body: JSON.stringify({ text }) });
+  if(!res || !res.ok){ showAlert('suggestBanner', res?.data?.error || 'Something went wrong.'); return; }
+  document.getElementById('suggestText').value = '';
+  showAlert('suggestBanner','Thanks — sent to the admins.','success');
+  renderMySuggestions();
+}
+
+async function renderMySuggestions(){
+  const wrap = document.getElementById('mySuggestionsList');
+  wrap.innerHTML = '<div class="empty-state">Loading...</div>';
+  const res = await apiFetch('/suggestions');
+  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load your suggestions.</div>'; return; }
+  const list = res.data.suggestions || [];
+  if(list.length===0){ wrap.innerHTML = '<div class="empty-state">You have not sent any suggestions yet.</div>'; return; }
+  wrap.innerHTML = list.map(s => `
+    <div class="fb-item">
+      <div class="fb-meta">
+        <span>${new Date(s.created_at).toLocaleDateString()}</span>
+        <span class="badge ${s.status==='reviewed'?'betrodd':'ny'}"><i></i>${s.status==='reviewed'?'Reviewed':'Open'}</span>
+      </div>
+      ${escapeHtml(s.text)}
+    </div>
+  `).join('');
 }
 
 init();

@@ -41,6 +41,12 @@
     <div class="field"><input type="text" id="userSearch" placeholder="Search users..." oninput="renderUsers()"></div>
     <div id="adminList"></div>
   </div>
+
+  <div class="panel" style="margin-top:16px;">
+    <h3 class="section-title">💡 Suggestions</h3>
+    <p class="section-sub">Sent in by members via the Suggest tab.</p>
+    <div id="suggestionsList"></div>
+  </div>
   <div style="text-align:center;padding:16px 0;"><span class="hint" id="versionFooter"></span></div>
 </div>
 
@@ -59,6 +65,7 @@ async function init(){
   }
   document.getElementById('userNameDisplay').textContent = profRes.data.user.username;
   await loadUsers();
+  await loadSuggestions();
 }
 
 async function loadUsers(){
@@ -125,6 +132,33 @@ async function toggleBan(userId){
   const res = await apiFetch(`/admin/users/${userId}/ban`, { method:'POST' });
   if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
   await loadUsers();
+}
+
+async function loadSuggestions(){
+  const wrap = document.getElementById('suggestionsList');
+  const res = await apiFetch('/admin/suggestions');
+  if(!res || !res.ok){ wrap.innerHTML = '<div class="empty-state">Could not load suggestions.</div>'; return; }
+  const list = res.data.suggestions || [];
+  if(list.length===0){ wrap.innerHTML = '<div class="empty-state">No suggestions yet.</div>'; return; }
+  wrap.innerHTML = list.map(s => `
+    <div class="fb-item">
+      <div class="fb-meta">
+        <span>${escapeHtml(s.username)}</span>
+        <span class="hint">${escapeHtml(s.email)}</span>
+        <span>${new Date(s.created_at).toLocaleDateString()}</span>
+      </div>
+      ${escapeHtml(s.text)}
+      <div class="rate-row">
+        <span class="badge ${s.status==='reviewed'?'betrodd':'omtvistad'}"><i></i>${s.status==='reviewed'?'Reviewed':'Open'}</span>
+        <button class="rate-btn" onclick="toggleSuggestion('${s.id}')">${s.status==='reviewed'?'Mark as open':'Mark as reviewed'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleSuggestion(id){
+  const res = await apiFetch(`/admin/suggestions/${id}/resolve`, { method:'POST' });
+  if(!res || !res.ok){ alert(res?.data?.error || 'Something went wrong.'); return; }
+  await loadSuggestions();
 }
 
 init();

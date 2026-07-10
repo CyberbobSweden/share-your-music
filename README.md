@@ -121,3 +121,21 @@ det är rimligt att vänta med tills ni har fler användare.
   deras spelare. Det som faktiskt ligger i databasen (D1) är kontouppgifter,
   låt-metadata och skriven feedback — se säkerhetsavsnittet ovan för hur det
   skyddas.
+
+---
+
+## Nytt: mobilanpassning + förslagslåda
+
+- **Mobil**: tabbarna staplas i 2 kolumner på smala skärmar, adminraderna
+  (poängjustering/spärra) staplas vertikalt istället för att klämmas ihop,
+  och modalrutan för feedback får en maxhöjd med scroll så den aldrig går
+  utanför skärmen på en telefon.
+- **Förslagslåda**: ny flik **Suggest** i appen där medlemmar kan skicka in
+  buggar/idéer (minst 10 tecken). Admin ser alla förslag längst ner på
+  adminsidan, sorterade med öppna först, och kan markera dem som granskade.
+  Kräver en databasmigration eftersom det är en helt ny tabell:
+  ```
+  wrangler d1 execute share-your-music-db --remote --file=./migration_003_suggestions.sql
+  ```
+
+Version efter den här ändringen: **v1.2.0**.

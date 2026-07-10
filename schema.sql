@@ -51,6 +51,15 @@ CREATE INDEX idx_tracks_owner  ON tracks(owner_id);
 CREATE INDEX idx_feedback_track    ON feedback(track_id);
 CREATE INDEX idx_feedback_listener ON feedback(listener_id);
 
+CREATE TABLE suggestions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open', -- open | reviewed
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_suggestions_status ON suggestions(status);
+
 -- ============================================================
 -- Sista steget görs manuellt efter första inloggningen:
 --   UPDATE users SET is_admin = 1 WHERE email = 'din@mejl.se';
